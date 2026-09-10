@@ -1,0 +1,195 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-zinc-800/80;
+  }
+
+  html {
+    @apply bg-zinc-950;
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-zinc-950 text-zinc-100 antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary-500/70 ring-offset-2 ring-offset-zinc-950;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-zinc-700/80 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-zinc-600;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium rounded-control
+           transition-colors duration-150 ease-out
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-500 text-zinc-950 hover:bg-primary-400
+           active:bg-primary-600;
+  }
+
+  .btn-secondary {
+    @apply btn bg-zinc-900 text-zinc-100 border border-zinc-700/80
+           hover:bg-zinc-800 hover:border-zinc-600;
+  }
+
+  .btn-ghost {
+    @apply btn text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/70;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-500/10 text-red-300 border border-red-500/20
+           hover:bg-red-500/20;
+  }
+
+  .input {
+    @apply w-full h-11 px-3.5 bg-zinc-900/80 border border-zinc-800 rounded-control
+           text-zinc-100 placeholder-zinc-500 text-sm
+           focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:border-primary-500
+           transition-colors duration-150;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-zinc-300 mb-1.5;
+  }
+
+  .card {
+    @apply bg-zinc-900/40 border border-zinc-800/70 rounded-xl;
+  }
+
+  .card-hover {
+    @apply card transition-colors duration-150 hover:border-zinc-700 hover:bg-zinc-900/70;
+  }
+
+  /* Theme-tinted interactive cards (filters / galleries / builder picks) */
+  .card-interactive {
+    @apply rounded-xl border border-primary-500/25 bg-zinc-900/50 backdrop-blur-md
+           cursor-pointer
+           transition-[transform,box-shadow,border-color,background-color] duration-[400ms] ease-out
+           hover:-translate-y-0.5 hover:shadow-xl hover:border-primary-500/45 hover:bg-zinc-900/70;
+  }
+
+  .card-interactive-selected {
+    @apply border-primary-500/70 bg-primary-500/10 ring-1 ring-primary-500/25
+           shadow-[0_0_0_1px_rgba(20,184,166,0.18)];
+  }
+
+  .surface {
+    @apply rounded-xl bg-zinc-900/30;
+  }
+
+  .page-title {
+    @apply text-page text-zinc-50;
+  }
+
+  .page-desc {
+    @apply text-sm text-zinc-400 mt-1;
+  }
+
+  .section-title {
+    @apply text-section text-zinc-100;
+  }
+
+  .meta {
+    @apply text-xs text-zinc-500;
+  }
+
+  .ui-table {
+    @apply w-full text-sm;
+  }
+
+  .ui-table thead th {
+    @apply text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 px-4 py-3
+           border-b border-zinc-800/80 bg-zinc-950/90 sticky top-0;
+  }
+
+  .ui-table tbody td {
+    @apply px-4 py-3 align-middle;
+  }
+
+  .ui-table tbody tr {
+    @apply border-b border-zinc-800/50 last:border-0;
+  }
+
+  .gradient-text {
+    @apply text-primary-300;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .app-shell {
+    @apply max-w-6xl;
+  }
+}
+
+/* Public marketing shell — light theme only (does not affect dashboard/app). */
+.marketing-shell {
+  color-scheme: light;
+}
+
+.marketing-shell .marketing-btn-primary {
+  @apply inline-flex items-center justify-center gap-2 font-medium rounded-control
+         bg-primary-500 text-zinc-950 hover:bg-primary-400 active:bg-primary-600
+         transition-colors duration-150;
+}
+
+.marketing-shell .marketing-btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 font-medium rounded-control
+         bg-white text-[#0B1020] border border-[#E8EAF0]
+         hover:bg-[#F6F7F9] transition-colors duration-150;
+}
+
+.marketing-shell .card {
+  @apply bg-white border-[#E8EAF0] text-[#0B1020];
+}
+
+.marketing-shell .text-zinc-300,
+.marketing-shell .text-zinc-400,
+.marketing-shell .text-zinc-500 {
+  color: #667085;
+}
+
+.marketing-shell .text-primary-400 {
+  color: #0d9488;
+}
+
+.marketing-shell .prose-invert {
+  --tw-prose-body: #667085;
+  --tw-prose-headings: #0B1020;
+  color: #667085;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

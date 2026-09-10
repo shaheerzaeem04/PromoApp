@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PromoApp widget QA</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; line-height: 1.5; }
+    h1 { font-size: 20px; }
+    .box { border: 1px dashed #a1a1aa; padding: 16px; margin: 24px 0; min-height: 200px; }
+    .tall { height: 140vh; background: linear-gradient(#fafafa, #e4e4e7); padding: 16px; }
+  </style>
+</head>
+<body>
+  <h1>PromoApp third-party widget QA</h1>
+  <p>Open this page from the PromoApp origin or copy it to another host and keep the script <code>src</code> pointed at PromoApp. Replace <code>CAMPAIGN_SLUG</code> below.</p>
+  <p>Modes: inline (this page), plus popup / banner / slide-in via query <code>?mode=popup</code>.</p>
+
+  <div id="promoapp-widget-CAMPAIGN_SLUG" class="box"></div>
+  <div class="tall">Scroll area for scroll-depth triggers.</div>
+
+  <script>
+    var params = new URLSearchParams(location.search);
+    var mode = params.get('mode') || 'inline';
+    var slug = params.get('slug') || 'CAMPAIGN_SLUG';
+    var s = document.createElement('script');
+    s.src = (params.get('origin') || location.origin) + '/widget.js';
+    s.setAttribute('data-campaign', slug);
+    s.setAttribute('data-mode', mode);
+    s.setAttribute('data-origin', params.get('origin') || location.origin);
+    document.body.appendChild(s);
+  </script>
+</body>
+</html>
