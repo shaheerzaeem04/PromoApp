@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -33,6 +34,7 @@ export function FilterSelect({
 }: FilterSelectProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
   const selected = options.find((option) => option.value === value) || options[0];
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export function FilterSelect({
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
           'w-full h-11 px-3.5 rounded-xl text-sm text-left flex items-center gap-2.5',
-          'bg-zinc-900/50 backdrop-blur-md border transition-all duration-150',
+          'bg-zinc-900/50 border transition-[border-color,background-color,box-shadow,color] duration-200',
           'focus:outline-none focus:ring-2 focus:ring-primary-500/40',
           open
             ? 'border-primary-500/70 ring-2 ring-primary-500/25 text-zinc-50 shadow-[0_0_0_1px_rgba(20,184,166,0.18)]'
@@ -75,65 +77,71 @@ export function FilterSelect({
         <span className="flex-1 truncate font-medium">{selected.label}</span>
         <ChevronDown
           className={cn(
-            'w-4 h-4 text-primary-300/80 shrink-0 transition-transform duration-150',
+            'w-4 h-4 text-primary-300/80 shrink-0 transition-transform duration-200',
             open && 'rotate-180'
           )}
         />
       </button>
 
-      {open && (
-        <div
-          role="listbox"
-          aria-label={ariaLabel}
-          className={cn(
-            'absolute z-50 mt-2 w-full overflow-hidden',
-            'rounded-xl border border-primary-500/35',
-            'bg-zinc-950/80 backdrop-blur-xl',
-            'shadow-xl shadow-primary-500/10 ring-1 ring-primary-500/15',
-            listClassName
-          )}
-        >
-          <div className="p-1.5 space-y-0.5 max-h-72 overflow-y-auto">
-            {options.map((option) => {
-              const active = option.value === value;
-              return (
-                <button
-                  key={option.value || option.label}
-                  type="button"
-                  role="option"
-                  aria-selected={active}
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    'w-full flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors',
-                    active
-                      ? 'bg-primary-500/15 text-zinc-50'
-                      : 'text-zinc-300 hover:bg-white/[0.04] hover:text-zinc-50'
-                  )}
-                >
-                  <span
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="listbox"
+            aria-label={ariaLabel}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+            transition={{ duration: reduceMotion ? 0.12 : 0.16, ease: [0.22, 1, 0.36, 1] }}
+            className={cn(
+              'absolute z-50 mt-2 w-full overflow-hidden origin-top',
+              'rounded-xl border border-primary-500/35',
+              'bg-zinc-950/95',
+              'shadow-xl shadow-black/40 ring-1 ring-primary-500/15',
+              listClassName
+            )}
+          >
+            <div className="p-1.5 space-y-0.5 max-h-72 overflow-y-auto">
+              {options.map((option) => {
+                const active = option.value === value;
+                return (
+                  <button
+                    key={option.value || option.label}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    onClick={() => {
+                      onChange(option.value);
+                      setOpen(false);
+                    }}
                     className={cn(
-                      'w-2 h-2 rounded-full mt-1.5 shrink-0',
-                      option.dotClassName || DEFAULT_DOT
+                      'w-full flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150',
+                      active
+                        ? 'bg-primary-500/15 text-zinc-50'
+                        : 'text-zinc-300 hover:bg-primary-500/10 hover:text-zinc-50'
                     )}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium leading-tight">{option.label}</span>
-                    {option.hint && (
-                      <span className="block text-[11px] text-zinc-500 mt-0.5 leading-tight">
-                        {option.hint}
-                      </span>
-                    )}
-                  </span>
-                  {active && <Check className="w-3.5 h-3.5 text-primary-400 mt-1 shrink-0" />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                  >
+                    <span
+                      className={cn(
+                        'w-2 h-2 rounded-full mt-1.5 shrink-0',
+                        option.dotClassName || DEFAULT_DOT
+                      )}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium leading-tight">{option.label}</span>
+                      {option.hint && (
+                        <span className="block text-[11px] text-zinc-500 mt-0.5 leading-tight">
+                          {option.hint}
+                        </span>
+                      )}
+                    </span>
+                    {active && <Check className="w-3.5 h-3.5 text-primary-400 mt-1 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

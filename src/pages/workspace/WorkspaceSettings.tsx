@@ -19,7 +19,7 @@ export function WorkspaceSettingsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       <PageHeader title="Workspace" description="Team, billing, and workspace settings — separate from your user profile." />
       <div className="flex gap-2 border-b border-zinc-800 pb-2">
         {(['general', 'team', 'billing', 'api', 'danger'] as Tab[]).map((item) => (

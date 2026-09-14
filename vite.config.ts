@@ -19,9 +19,21 @@ export default defineConfig({
     port: parseInt(process.env.VITE_DEV_PORT || '5173', 10),
     cors: true,
     proxy: {
+      // Browser calls http://localhost:5173/api/* → forwarded to backend
       '/api': {
         target: process.env.VITE_API_PROXY || 'http://127.0.0.1:3001',
         changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+  preview: {
+    port: parseInt(process.env.VITE_DEV_PORT || '5173', 10),
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_PROXY || 'http://127.0.0.1:3001',
+        changeOrigin: true,
+        secure: false,
       },
     },
   },

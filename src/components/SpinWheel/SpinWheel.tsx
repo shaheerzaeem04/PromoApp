@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Gift, Sparkles, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { cn } from '../../utils/cn';
+import { Button } from '../ui';
 
 export interface WheelSegment {
   id: string;
@@ -25,6 +26,8 @@ interface SpinWheelProps {
   hideControls?: boolean;
 }
 
+const THEME_CONFETTI = ['#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#f0fdfa'];
+
 export function SpinWheel({
   segments,
   onSpin,
@@ -33,6 +36,7 @@ export function SpinWheel({
   size = 320,
   hideControls = false,
 }: SpinWheelProps) {
+  const reduceMotion = useReducedMotion();
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState<{
@@ -42,10 +46,11 @@ export function SpinWheel({
   } | null>(null);
   const [showResult, setShowResult] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const settleTimerRef = useRef<number | undefined>(undefined);
 
   const segmentAngle = segments.length > 0 ? 360 / segments.length : 0;
+  const spinDuration = reduceMotion ? 1.2 : 5;
 
-  // Draw the wheel
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -55,64 +60,90 @@ export function SpinWheel({
 
     const centerX = size / 2;
     const centerY = size / 2;
-    const radius = size / 2 - 10;
+    const radius = size / 2 - 14;
 
     ctx.clearRect(0, 0, size, size);
+
+    // Outer bezel glow
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius + 8, 0, Math.PI * 2);
+    const rimGlow = ctx.createRadialGradient(centerX, centerY, radius - 4, centerX, centerY, radius + 10);
+    rimGlow.addColorStop(0, 'rgba(20, 184, 166, 0)');
+    rimGlow.addColorStop(1, 'rgba(20, 184, 166, 0.28)');
+    ctx.fillStyle = rimGlow;
+    ctx.fill();
 
     segments.forEach((segment, index) => {
       const startAngle = (index * segmentAngle - 90) * (Math.PI / 180);
       const endAngle = ((index + 1) * segmentAngle - 90) * (Math.PI / 180);
 
-      // Draw segment
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
       ctx.arc(centerX, centerY, radius, startAngle, endAngle);
       ctx.closePath();
 
-      // Gradient fill
-      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-      gradient.addColorStop(0, adjustColor(segment.color, 30));
-      gradient.addColorStop(1, segment.color);
+      const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.12, centerX, centerY, radius);
+      gradient.addColorStop(0, adjustColor(segment.color, 36));
+      gradient.addColorStop(0.72, segment.color);
+      gradient.addColorStop(1, adjustColor(segment.color, -18));
       ctx.fillStyle = gradient;
       ctx.fill();
 
-      // Segment border
-      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(9, 9, 11, 0.35)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Draw text
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.rotate((startAngle + endAngle) / 2);
       ctx.textAlign = 'right';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.max(12, size / 25)}px Inter, sans-serif`;
-      ctx.shadowColor = 'rgba(0,0,0,0.5)';
-      ctx.shadowBlur = 4;
-      ctx.fillText(segment.label, radius - 20, 5);
+      ctx.fillStyle = contrastText(segment.color);
+      ctx.font = `600 ${Math.max(11, size / 24)}px Figtree, system-ui, sans-serif`;
+      ctx.shadowColor = 'rgba(9, 9, 11, 0.45)';
+      ctx.shadowBlur = 3;
+      ctx.fillText(truncateLabel(segment.label, size), radius - 22, 4);
       ctx.restore();
     });
 
-    // Draw center circle
+    // Inner teal ring
     ctx.beginPath();
-    ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
-    const centerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 30);
-    centerGradient.addColorStop(0, '#8b5cf6');
-    centerGradient.addColorStop(1, '#6366f1');
-    ctx.fillStyle = centerGradient;
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
+    ctx.arc(centerX, centerY, radius - 1, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(20, 184, 166, 0.35)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Outer ring
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius + 4, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(45, 212, 191, 0.55)';
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Draw outer ring
+    // Hub
+    const hubRadius = Math.max(22, size * 0.09);
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius + 5, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 4;
+    ctx.arc(centerX, centerY, hubRadius, 0, Math.PI * 2);
+    const hub = ctx.createRadialGradient(centerX - 4, centerY - 4, 2, centerX, centerY, hubRadius);
+    hub.addColorStop(0, '#5eead4');
+    hub.addColorStop(0.45, '#14b8a6');
+    hub.addColorStop(1, '#0d9488');
+    ctx.fillStyle = hub;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(240, 253, 250, 0.55)';
+    ctx.lineWidth = 2;
     ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, hubRadius * 0.38, 0, Math.PI * 2);
+    ctx.fillStyle = '#042f2e';
+    ctx.fill();
   }, [segments, size, segmentAngle]);
+
+  useEffect(() => {
+    return () => {
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+    };
+  }, []);
 
   if (!segments.length) {
     return null;
@@ -125,63 +156,83 @@ export function SpinWheel({
     setShowResult(false);
 
     try {
-      const result = await onSpin();
-
-      // Find the segment index
-      const segmentIndex = segments.findIndex(s => s.id === result.segment.id);
-      
-      // Calculate target rotation
-      // We need to land on the segment, accounting for the pointer at top
+      const spinResult = await onSpin();
+      const segmentIndex = segments.findIndex((s) => s.id === spinResult.segment.id);
       const targetSegmentCenter = segmentIndex * segmentAngle + segmentAngle / 2;
-      const spins = 5 + Math.random() * 3; // 5-8 full spins
-      const targetRotation = rotation + (360 * spins) + (360 - targetSegmentCenter);
+      const spins = reduceMotion ? 2 : 5 + Math.random() * 3;
+      const targetRotation = rotation + 360 * spins + (360 - targetSegmentCenter);
 
       setRotation(targetRotation);
 
-      // Wait for animation to complete
-      setTimeout(() => {
+      settleTimerRef.current = window.setTimeout(() => {
         setIsSpinning(false);
         setResult({
-          success: result.success,
-          segment: result.segment,
-          message: result.message,
+          success: spinResult.success,
+          segment: spinResult.segment,
+          message: spinResult.message,
         });
         setShowResult(true);
 
-        // Confetti for wins!
-        if (result.success) {
+        if (spinResult.success && !reduceMotion) {
           confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#6366f1', '#8b5cf6', '#a855f7', '#22c55e', '#f59e0b'],
+            particleCount: 90,
+            spread: 68,
+            origin: { y: 0.62 },
+            colors: THEME_CONFETTI,
           });
         }
-      }, 5000);
-    } catch (error) {
+      }, spinDuration * 1000);
+    } catch {
       setIsSpinning(false);
-      // Error handling done by parent
     }
   };
 
+  const canSpin = !isSpinning && !disabled && spinsRemaining > 0;
+
   return (
     <div className="flex flex-col items-center" data-testid="live-spin-wheel">
-      {/* Wheel Container */}
       <div className="relative" style={{ width: size, height: size }}>
-        {/* Pointer */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10">
-          <div 
-            className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[30px] border-l-transparent border-r-transparent border-t-white"
-            style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
-          />
-        </div>
+        <div
+          className="absolute inset-0 rounded-full pointer-events-none"
+          style={{
+            boxShadow:
+              '0 0 0 1px rgba(20, 184, 166, 0.28), 0 0 36px rgba(20, 184, 166, 0.16), inset 0 1px 0 rgba(45, 212, 191, 0.14)',
+            background:
+              'radial-gradient(120% 80% at 50% -10%, rgba(20, 184, 166, 0.16), transparent 46%)',
+          }}
+        />
 
-        {/* Rotating Wheel */}
+        <motion.div
+          className="absolute top-0 left-1/2 z-20"
+          style={{ x: '-50%' }}
+          animate={
+            reduceMotion
+              ? { x: '-50%' }
+              : isSpinning
+                ? { x: '-50%', y: [0, -2, 0] }
+                : showResult
+                  ? { x: '-50%', y: [0, 3, 0] }
+                  : { x: '-50%', y: 0 }
+          }
+          transition={isSpinning ? { repeat: Infinity, duration: 0.35 } : { duration: 0.35 }}
+        >
+          <svg
+            width="22"
+            height="28"
+            viewBox="0 0 22 28"
+            aria-hidden="true"
+            className="block drop-shadow-[0_0_10px_rgba(20,184,166,0.55)]"
+          >
+            <path d="M11 28L0 0h22L11 28z" fill="#2dd4bf" />
+            <path d="M11 22L5 4h12L11 22z" fill="#042f2e" opacity="0.22" />
+          </svg>
+        </motion.div>
+
         <motion.div
           animate={{ rotate: rotation }}
           transition={{
-            duration: 5,
-            ease: [0.2, 0.8, 0.3, 0.99], // Custom easing for realistic spin
+            duration: spinDuration,
+            ease: reduceMotion ? 'easeOut' : [0.2, 0.8, 0.3, 0.99],
           }}
           className="relative"
           style={{ width: size, height: size }}
@@ -191,123 +242,112 @@ export function SpinWheel({
             width={size}
             height={size}
             className="rounded-full"
-            style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.4))' }}
+            style={{ filter: 'drop-shadow(0 10px 28px rgba(0,0,0,0.42))' }}
           />
         </motion.div>
 
-        {/* Decorative lights around wheel */}
         <div className="absolute inset-0 pointer-events-none">
           {Array.from({ length: 16 }).map((_, i) => (
-            <div
+            <span
               key={i}
               className={cn(
-                'absolute w-3 h-3 rounded-full',
-                isSpinning ? 'animate-pulse' : ''
+                'absolute w-2 h-2 rounded-full',
+                isSpinning && !reduceMotion && 'animate-pulse-soft'
               )}
               style={{
-                backgroundColor: i % 2 === 0 ? '#fbbf24' : '#ffffff',
-                left: `${50 + 48 * Math.cos((i * 22.5 - 90) * Math.PI / 180)}%`,
-                top: `${50 + 48 * Math.sin((i * 22.5 - 90) * Math.PI / 180)}%`,
+                backgroundColor: i % 2 === 0 ? '#2dd4bf' : '#99f6e4',
+                left: `${50 + 48.2 * Math.cos(((i * 22.5 - 90) * Math.PI) / 180)}%`,
+                top: `${50 + 48.2 * Math.sin(((i * 22.5 - 90) * Math.PI) / 180)}%`,
                 transform: 'translate(-50%, -50%)',
-                boxShadow: `0 0 10px ${i % 2 === 0 ? '#fbbf24' : '#ffffff'}`,
+                boxShadow: `0 0 10px ${i % 2 === 0 ? 'rgba(20,184,166,0.7)' : 'rgba(153,246,228,0.45)'}`,
               }}
             />
           ))}
         </div>
       </div>
 
-      {/* Spin Button */}
       {!hideControls && (
-        <>
-      <button
-        onClick={handleSpin}
-        disabled={isSpinning || disabled || spinsRemaining <= 0}
-        data-testid="spin-button"
-        className={cn(
-          'mt-5 px-6 py-2.5 rounded-lg font-semibold text-sm transition-colors',
-          'flex items-center gap-2',
-          isSpinning || disabled || spinsRemaining <= 0
-            ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-            : 'bg-primary-500 text-zinc-950 hover:bg-primary-400'
-        )}
-      >
-        <Sparkles className={cn('w-4 h-4', isSpinning && 'animate-spin')} />
-        {isSpinning ? 'Spinning…' : spinsRemaining > 0 ? 'Spin now' : 'No spins left today'}
-      </button>
-
-      {/* Spins remaining */}
-      <p className="mt-3 text-sm text-zinc-400">
-        {spinsRemaining} spin{spinsRemaining !== 1 ? 's' : ''} remaining today
-      </p>
-        </>
+        <div className="mt-6 flex flex-col items-center gap-2.5">
+          <Button
+            type="button"
+            onClick={handleSpin}
+            disabled={!canSpin}
+            data-testid="spin-button"
+          >
+            <Sparkles className={cn('w-4 h-4', isSpinning && 'animate-spin')} />
+            {isSpinning ? 'Spinning…' : spinsRemaining > 0 ? 'Spin now' : 'No spins left today'}
+          </Button>
+          <p className="text-sm text-zinc-400">
+            <span className="text-primary-300 font-medium">{spinsRemaining}</span>
+            {' '}spin{spinsRemaining !== 1 ? 's' : ''} remaining today
+          </p>
+        </div>
       )}
 
-      {/* Result Modal */}
       <AnimatePresence>
         {showResult && result && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-sm"
             onClick={() => setShowResult(false)}
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
               onClick={(e) => e.stopPropagation()}
               data-testid="spin-result"
               className={cn(
-                'relative max-w-sm w-full p-8 rounded-2xl text-center',
+                'relative w-full max-w-sm rounded-xl border p-8 text-center shadow-[0_16px_40px_rgba(0,0,0,0.55)]',
+                'bg-zinc-950',
                 result.success
-                  ? 'bg-gradient-to-br from-emerald-900/90 to-emerald-950/90 border border-emerald-500/30'
-                  : 'bg-gradient-to-br from-zinc-800/90 to-zinc-900/90 border border-zinc-700'
+                  ? 'border-primary-500/45'
+                  : 'border-zinc-700/80'
               )}
             >
               <button
+                type="button"
                 onClick={() => setShowResult(false)}
-                className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white"
+                aria-label="Close result"
+                className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-xl text-zinc-400 hover:text-zinc-100 hover:bg-primary-500/10 hover:border-primary-500/25 border border-transparent transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
 
               <div
                 className={cn(
-                  'w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center',
-                  result.success ? 'bg-emerald-500/20' : 'bg-zinc-700'
+                  'mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border',
+                  result.success
+                    ? 'bg-primary-500/15 border-primary-500/30 text-primary-300 shadow-[0_0_22px_rgba(20,184,166,0.22)]'
+                    : 'bg-zinc-900 border-zinc-700 text-zinc-400'
                 )}
               >
-                <Gift className={cn(
-                  'w-10 h-10',
-                  result.success ? 'text-emerald-400' : 'text-zinc-400'
-                )} />
+                <Gift className="w-8 h-8" />
               </div>
 
-              <h3 className={cn(
-                'text-2xl font-bold mb-2',
-                result.success ? 'text-emerald-400' : 'text-zinc-300'
-              )}>
-                {result.success ? 'Congratulations!' : 'Better luck next time!'}
+              <h3 className={cn('text-xl font-semibold mb-2', result.success ? 'text-primary-200' : 'text-zinc-200')}>
+                {result.success ? 'Congratulations!' : 'Better luck next time'}
               </h3>
-
-              <p className="text-lg text-zinc-300 mb-2">{result.message}</p>
+              <p className="text-sm text-zinc-400 mb-4">{result.message}</p>
 
               <div
-                className="mt-4 px-4 py-2 rounded-lg inline-block"
-                style={{ backgroundColor: result.segment.color + '30' }}
+                className="inline-flex items-center rounded-xl border px-3.5 py-1.5 text-sm font-medium"
+                style={{
+                  backgroundColor: `${result.segment.color}22`,
+                  borderColor: `${result.segment.color}55`,
+                  color: result.segment.color,
+                }}
               >
-                <span style={{ color: result.segment.color }} className="font-semibold">
-                  {result.segment.label}
-                </span>
+                {result.segment.label}
               </div>
 
-              <button
-                onClick={() => setShowResult(false)}
-                className="mt-6 w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl font-medium transition-colors"
-              >
+              <Button type="button" className="mt-6 w-full" onClick={() => setShowResult(false)}>
                 Continue
-              </button>
+              </Button>
             </motion.div>
           </motion.div>
         )}
@@ -316,12 +356,26 @@ export function SpinWheel({
   );
 }
 
-// Helper to adjust color brightness
 function adjustColor(color: string, amount: number): string {
   const hex = color.replace('#', '');
-  const r = Math.min(255, parseInt(hex.slice(0, 2), 16) + amount);
-  const g = Math.min(255, parseInt(hex.slice(2, 4), 16) + amount);
-  const b = Math.min(255, parseInt(hex.slice(4, 6), 16) + amount);
+  if (hex.length < 6) return color;
+  const r = Math.min(255, Math.max(0, parseInt(hex.slice(0, 2), 16) + amount));
+  const g = Math.min(255, Math.max(0, parseInt(hex.slice(2, 4), 16) + amount));
+  const b = Math.min(255, Math.max(0, parseInt(hex.slice(4, 6), 16) + amount));
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+function contrastText(color: string): string {
+  const hex = color.replace('#', '');
+  if (hex.length < 6) return '#f0fdfa';
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luma > 0.62 ? '#042f2e' : '#f0fdfa';
+}
+
+function truncateLabel(label: string, size: number): string {
+  const max = size < 220 ? 10 : 16;
+  return label.length > max ? `${label.slice(0, max - 1)}…` : label;
+}

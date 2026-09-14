@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -16,7 +16,8 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion';
+import type { LucideIcon } from 'lucide-react';
 import {
   GripVertical,
   Plus,
@@ -24,9 +25,54 @@ import {
   Gift,
   Zap,
   Check,
+  Mail,
+  Link2,
+  Newspaper,
+  Smartphone,
+  Facebook,
+  Share2,
+  AtSign,
+  Instagram,
+  Music2,
+  Youtube,
+  MessageCircle,
+  Bookmark,
+  Linkedin,
+  Headphones,
+  HelpCircle,
+  Users,
+  KeyRound,
+  Ticket,
+  Star,
+  Image as ImageIcon,
+  FileUp,
+  Puzzle,
+  Send,
+  Music,
+  Apple,
+  Gamepad2,
+  Store,
+  Play,
+  Hash,
+  Calendar,
+  ShoppingBag,
+  MapPin,
+  Download,
+  PlayCircle,
+  Volume2,
+  Globe,
+  Webhook,
 } from 'lucide-react';
-import { Card, Button, Input, Modal } from '../ui';
-import { ACTION_DEFINITIONS, ACTION_GROUPS, getActionDefinition, verificationLabelForMode } from '../../campaign/actionCatalog';
+import { Card, Button, Input, Modal, Badge, FilterSelect } from '../ui';
+import type { FilterSelectOption } from '../ui';
+import { cn } from '../../utils/cn';
+import {
+  ACTION_DEFINITIONS,
+  ACTION_GROUPS,
+  getActionDefinition,
+  verificationLabelForMode,
+  type ActionDefinition,
+} from '../../campaign/actionCatalog';
 
 export interface EntryAction {
   id: string;
@@ -48,13 +94,318 @@ interface EntryActionBuilderProps {
   allowedActionTypes?: string[] | null;
 }
 
+const ACTION_TYPE_ICONS: Record<string, LucideIcon> = {
+  NEWSLETTER: Mail,
+  VISIT_URL: Link2,
+  BLOG_VISIT: Newspaper,
+  APP_DOWNLOAD: Smartphone,
+  FACEBOOK_LIKE: Facebook,
+  FACEBOOK_SHARE: Facebook,
+  FACEBOOK_GROUP_VISIT: Users,
+  TWITTER_FOLLOW: AtSign,
+  TWITTER_RETWEET: Share2,
+  TWITTER_TWEET: AtSign,
+  INSTAGRAM_FOLLOW: Instagram,
+  INSTAGRAM_LIKE: Instagram,
+  INSTAGRAM_PROFILE_VISIT: Instagram,
+  TIKTOK_FOLLOW: Music2,
+  TIKTOK_LIKE: Music2,
+  YOUTUBE_SUBSCRIBE: Youtube,
+  YOUTUBE_WATCH: Youtube,
+  YOUTUBE_CHANNEL_VISIT: Youtube,
+  REDDIT_VISIT: MessageCircle,
+  REDDIT_JOIN: MessageCircle,
+  PINTEREST_PIN: Bookmark,
+  PINTEREST_FOLLOW: Bookmark,
+  LINKEDIN_SHARE: Linkedin,
+  LINKEDIN_FOLLOW: Linkedin,
+  PODCAST_LISTEN: Headphones,
+  QUESTION: HelpCircle,
+  VIRAL_SHARE: Users,
+  BONUS_ENTRY: Gift,
+  SECRET_CODE: KeyRound,
+  COUPON_CODE: Ticket,
+  LOYALTY_BONUS: Star,
+  PHOTO_UPLOAD: ImageIcon,
+  DOCUMENT_UPLOAD: FileUp,
+  CUSTOM_ACTION: Puzzle,
+  TELEGRAM_JOIN: Send,
+  WHATSAPP_VISIT: MessageCircle,
+  SPOTIFY_FOLLOW: Music,
+  SPOTIFY_LISTEN: Music,
+  APPLE_MUSIC_LISTEN: Apple,
+  TWITCH_FOLLOW: Gamepad2,
+  TWITCH_WATCH: Gamepad2,
+  APP_STORE_VISIT: Store,
+  GOOGLE_PLAY_VISIT: Play,
+  DISCORD_JOIN: Hash,
+  BOOK_APPOINTMENT: Calendar,
+  PRODUCT_PAGE_VISIT: ShoppingBag,
+  STORE_VISIT: MapPin,
+  DOWNLOAD_RESOURCE: Download,
+  WATCH_VIDEO: PlayCircle,
+  LISTEN_AUDIO: Volume2,
+  JOIN_COMMUNITY: Globe,
+  WEBHOOK_COMPLETE: Webhook,
+  REVIEW_SITE_VISIT: Star,
+};
+
+function iconForActionType(type: string): LucideIcon {
+  return ACTION_TYPE_ICONS[type] ?? Zap;
+}
+
 const actionTypes = ACTION_DEFINITIONS.map((item) => ({
   value: item.type,
   label: item.label,
   group: item.group,
-  icon: Zap,
-  color: 'from-zinc-500 to-zinc-600',
+  icon: iconForActionType(item.type),
 }));
+
+type ActionGroupFilter = ActionDefinition['group'] | 'ALL';
+
+const COMPLETION_OPTIONS: FilterSelectOption[] = [
+  {
+    value: 'once',
+    label: 'Once',
+    hint: 'Participant can complete this a single time',
+    dotClassName: 'bg-zinc-400',
+  },
+  {
+    value: 'daily',
+    label: 'Daily',
+    hint: 'Resets on the campaign timezone day',
+    dotClassName: 'bg-primary-400 shadow-[0_0_8px_rgba(45,212,191,0.45)]',
+  },
+  {
+    value: 'repeatable',
+    label: 'Repeatable',
+    hint: 'Can be completed more than once',
+    dotClassName: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.45)]',
+  },
+];
+
+const ANSWER_TYPE_OPTIONS: FilterSelectOption[] = [
+  {
+    value: 'text',
+    label: 'Short answer',
+    hint: 'Free-text response',
+    dotClassName: 'bg-zinc-400',
+  },
+  {
+    value: 'choice',
+    label: 'Single select',
+    hint: 'Pick one option',
+    dotClassName: 'bg-primary-400 shadow-[0_0_8px_rgba(45,212,191,0.45)]',
+  },
+  {
+    value: 'multi',
+    label: 'Multi-select',
+    hint: 'Pick more than one',
+    dotClassName: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.45)]',
+  },
+];
+
+function GroupTablist({
+  children,
+  reduceMotion,
+}: {
+  children: ReactNode;
+  reduceMotion: boolean | null;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const settleRef = useRef<number | undefined>(undefined);
+  const { scrollXProgress } = useScroll({ container: ref, axis: 'x' });
+  const progress = useSpring(scrollXProgress, { stiffness: 280, damping: 36, mass: 0.4 });
+  const glowLeft = useTransform(progress, [0, 1], ['0%', '100%']);
+  const [edgeLeft, setEdgeLeft] = useState(0);
+  const [edgeRight, setEdgeRight] = useState(0);
+  const [scrolling, setScrolling] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const updateEdges = () => {
+      const max = node.scrollWidth - node.clientWidth;
+      if (max <= 1) {
+        setEdgeLeft(0);
+        setEdgeRight(0);
+        return;
+      }
+      setEdgeLeft(Math.min(1, node.scrollLeft / 32));
+      setEdgeRight(Math.min(1, (max - node.scrollLeft) / 32));
+    };
+
+    const onWheel = (event: WheelEvent) => {
+      if (node.scrollWidth <= node.clientWidth) return;
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+      event.preventDefault();
+      node.scrollLeft += event.deltaY;
+    };
+
+    const onScroll = () => {
+      updateEdges();
+      if (reduceMotion) return;
+      setScrolling(true);
+      window.clearTimeout(settleRef.current);
+      settleRef.current = window.setTimeout(() => setScrolling(false), 160);
+    };
+
+    updateEdges();
+    node.addEventListener('wheel', onWheel, { passive: false });
+    node.addEventListener('scroll', onScroll, { passive: true });
+    const observer = new ResizeObserver(updateEdges);
+    observer.observe(node);
+
+    return () => {
+      node.removeEventListener('wheel', onWheel);
+      node.removeEventListener('scroll', onScroll);
+      observer.disconnect();
+      window.clearTimeout(settleRef.current);
+    };
+  }, [reduceMotion]);
+
+  return (
+    <motion.div
+      className="relative mb-3"
+      animate={reduceMotion ? undefined : { y: scrolling ? -1 : 0 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+    >
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-zinc-950 to-transparent"
+        animate={{ opacity: reduceMotion ? 0 : edgeLeft }}
+        transition={{ duration: 0.22 }}
+      />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-zinc-950 to-transparent"
+        animate={{ opacity: reduceMotion ? 0 : edgeRight }}
+        transition={{ duration: 0.22 }}
+      />
+
+      <div
+        ref={ref}
+        className="flex flex-nowrap items-center overflow-x-auto overscroll-x-contain touch-pan-x gap-1.5 py-1.5 min-h-11 scrollbar-hide"
+        role="tablist"
+        aria-label="Action groups"
+      >
+        {children}
+      </div>
+
+      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-zinc-800" />
+      {!reduceMotion && (
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 h-[2px] w-24 -translate-x-1/2 rounded-full bg-gradient-to-r from-transparent via-primary-400 to-transparent shadow-[0_0_14px_rgba(20,184,166,0.55)]"
+          style={{ left: glowLeft }}
+        />
+      )}
+    </motion.div>
+  );
+}
+
+function RequiredToggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex items-center gap-3 text-left group"
+    >
+      <span
+        className={cn(
+          'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200',
+          checked
+            ? 'bg-primary-500 border-primary-400/50'
+            : 'bg-zinc-800 border-zinc-700 group-hover:border-primary-500/30'
+        )}
+      >
+        <span
+          className={cn(
+            'inline-block h-4 w-4 rounded-full bg-zinc-50 shadow transition-transform duration-200',
+            checked ? 'translate-x-6' : 'translate-x-1'
+          )}
+        />
+      </span>
+      <span className="text-sm text-zinc-200">{label}</span>
+    </button>
+  );
+}
+
+function ActionTypeTile({
+  type,
+  label,
+  selected,
+  locked,
+  index,
+  reduceMotion,
+  onSelect,
+}: {
+  type: string;
+  label: string;
+  selected: boolean;
+  locked: boolean;
+  index: number;
+  reduceMotion: boolean | null;
+  onSelect: () => void;
+}) {
+  const Icon = iconForActionType(type);
+  const delay = reduceMotion ? 0 : Math.min(index, 16) * 0.028;
+
+  return (
+    <motion.button
+      type="button"
+      disabled={locked}
+      aria-pressed={selected}
+      onClick={() => !locked && onSelect()}
+      initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.98 }}
+      animate={{ opacity: locked ? 0.6 : 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.28, delay, ease: [0.22, 1, 0.36, 1] }}
+      whileTap={locked || reduceMotion ? undefined : { scale: 0.98 }}
+      className={cn(
+        'p-3 text-left relative card-interactive min-h-[88px]',
+        locked && 'cursor-not-allowed hover:translate-y-0 hover:shadow-none hover:border-primary-500/25',
+        selected && !locked && 'card-interactive-selected'
+      )}
+    >
+      <div
+        className={cn(
+          'inline-flex p-1.5 rounded-lg mb-2 transition-colors duration-200',
+          selected && !locked
+            ? 'bg-primary-400 text-zinc-950 shadow-[0_0_12px_rgba(20,184,166,0.35)]'
+            : 'bg-primary-500/15 text-primary-200'
+        )}
+      >
+        <Icon className="w-4 h-4" />
+      </div>
+      <p className="text-sm font-medium text-zinc-100 leading-snug pr-5">{label}</p>
+      {locked && <p className="text-[10px] text-amber-400 mt-1">Upgrade to unlock</p>}
+      <AnimatePresence>
+        {selected && !locked && (
+          <motion.span
+            initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.6, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 24 }}
+            className="absolute top-2 right-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary-400 text-zinc-950"
+          >
+            <Check className="w-3 h-3" />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.button>
+  );
+}
 
 interface SortableItemProps {
   action: EntryAction;
@@ -90,20 +441,20 @@ function SortableItem({ action, onEdit, onDelete }: SortableItemProps) {
       exit={{ opacity: 0, scale: 0.95 }}
       className={`group relative ${isDragging ? 'z-50' : ''}`}
     >
-      <Card className="p-4 border border-zinc-800 hover:border-zinc-700 transition-all">
+      <Card className="p-4 card-interactive hover:translate-y-0">
         <div className="flex items-center gap-4">
           {/* Drag Handle */}
           <button
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing text-zinc-500 hover:text-zinc-300 touch-none"
+            className="cursor-grab active:cursor-grabbing text-zinc-500 hover:text-primary-200 touch-none"
           >
             <GripVertical className="w-5 h-5" />
           </button>
 
           {/* Icon */}
-          <div className={`p-2 rounded-lg bg-gradient-to-br ${actionType?.color || 'from-zinc-500 to-zinc-600'}`}>
-            <Icon className="w-5 h-5 text-white" />
+          <div className="p-2 rounded-lg bg-primary-500/15 text-primary-200">
+            <Icon className="w-5 h-5" />
           </div>
 
           {/* Content */}
@@ -111,11 +462,11 @@ function SortableItem({ action, onEdit, onDelete }: SortableItemProps) {
             <div className="flex items-center gap-2">
               <h4 className="font-medium truncate">{action.title || actionType?.label}</h4>
               {action.required && (
-                <span className="px-1.5 py-0.5 text-xs bg-amber-500/20 text-amber-400 rounded">Required</span>
+                <Badge variant="warning" size="sm">Required</Badge>
               )}
-              <span className="px-1.5 py-0.5 text-xs bg-zinc-800 text-zinc-400 rounded">
+              <Badge size="sm">
                 {verificationLabelForMode(getActionDefinition(action.type)?.verification)}
-              </span>
+              </Badge>
             </div>
             <p className="text-sm text-zinc-400 truncate">{action.description || actionType?.label}</p>
             {action.completionKey && (
@@ -149,7 +500,9 @@ function SortableItem({ action, onEdit, onDelete }: SortableItemProps) {
 
 export function EntryActionBuilder({ actions, onChange, allowedActionTypes }: EntryActionBuilderProps) {
   const isLocked = (type: string) => Array.isArray(allowedActionTypes) && !allowedActionTypes.includes(type);
+  const reduceMotion = useReducedMotion();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<ActionGroupFilter>('ALL');
   const [editingAction, setEditingAction] = useState<EntryAction | null>(null);
   const [selectedType, setSelectedType] = useState('NEWSLETTER');
   const [newAction, setNewAction] = useState<Partial<EntryAction>>({
@@ -226,6 +579,7 @@ export function EntryActionBuilder({ actions, onChange, allowedActionTypes }: En
 
   const resetForm = () => {
     setSelectedType('NEWSLETTER');
+    setActiveGroup('ALL');
     setNewAction({
       title: '',
       description: '',
@@ -235,33 +589,51 @@ export function EntryActionBuilder({ actions, onChange, allowedActionTypes }: En
     });
   };
 
-  const renderConfigFields = (type: string, config: Record<string, any>, setConfig: (config: Record<string, any>) => void, extra?: { dailyLimit?: number | null; setDailyLimit?: (value: number | null) => void }) => {
+  const renderConfigFields = (
+    type: string,
+    config: Record<string, any>,
+    setConfig: (config: Record<string, any>) => void,
+    extra?: {
+      dailyLimit?: number | null;
+      patch?: (next: { config?: Record<string, any>; dailyLimit?: number | null }) => void;
+    }
+  ) => {
     const definition = getActionDefinition(type);
     const honorNotice = definition && definition.verification === 'honor_system' ? (
-      <p className="text-sm text-amber-400">Verification: user-confirmed. This is not verified with the provider.</p>
+      <p className="text-sm rounded-xl border border-amber-500/25 bg-amber-500/8 px-3 py-2 text-amber-200">
+        Verification: user-confirmed. This is not verified with the provider.
+      </p>
     ) : definition && definition.verification === 'verified_internal' ? (
-      <p className="text-sm text-zinc-400">Verification: automatic internal validation.</p>
+      <p className="text-sm rounded-xl border border-primary-500/25 bg-primary-500/8 px-3 py-2 text-primary-100">
+        Verification: automatic internal validation.
+      </p>
     ) : (
-      <p className="text-sm text-zinc-400">Verification: recorded. Free-text answers are not marked verified unless you set a quiz answer.</p>
+      <p className="text-sm rounded-xl border border-zinc-700/80 bg-zinc-900/60 px-3 py-2 text-zinc-300">
+        Verification: recorded. Free-text answers are not marked verified unless you set a quiz answer.
+      </p>
     );
 
+    const completionMode = config.completionMode || (type === 'BONUS_ENTRY' ? 'daily' : 'once');
     const completion = (
       <div className="space-y-2">
-        <label className="block text-sm text-zinc-300">Completion</label>
-        <select
-          className="input"
-          value={config.completionMode || (type === 'BONUS_ENTRY' ? 'daily' : 'once')}
-          onChange={(e) => {
-            const completionMode = e.target.value;
-            setConfig({ ...config, completionMode });
-            extra?.setDailyLimit?.(completionMode === 'once' ? null : completionMode === 'daily' ? 1 : extra.dailyLimit || 1);
+        <label className="label mb-0">Completion</label>
+        <FilterSelect
+          aria-label="Completion"
+          options={COMPLETION_OPTIONS}
+          value={completionMode}
+          onChange={(nextMode) => {
+            const nextConfig = { ...config, completionMode: nextMode };
+            const dailyLimit =
+              nextMode === 'once' ? null : nextMode === 'daily' ? 1 : extra?.dailyLimit ?? 1;
+            if (extra?.patch) {
+              extra.patch({ config: nextConfig, dailyLimit });
+              return;
+            }
+            setConfig(nextConfig);
           }}
-        >
-          <option value="once">Once</option>
-          <option value="daily">Daily (campaign timezone)</option>
-          <option value="repeatable">Repeatable</option>
-        </select>
-        {(config.completionMode === 'daily' || type === 'BONUS_ENTRY') && extra?.setDailyLimit && (
+          listClassName="bottom-full top-auto mb-2 mt-0"
+        />
+        {completionMode === 'daily' && (
           <p className="text-xs text-zinc-500">Server uses the campaign timezone day boundary. Participants cannot double-claim the same campaign day.</p>
         )}
       </div>
@@ -311,12 +683,16 @@ export function EntryActionBuilder({ actions, onChange, allowedActionTypes }: En
           <>
             {honorNotice}
             <Input label="Question" placeholder="What is your favorite...?" value={config.question || ''} onChange={(e) => setConfig({ ...config, question: e.target.value })} />
-            <label className="block text-sm text-zinc-300">Answer type</label>
-            <select className="input" value={config.inputType || 'text'} onChange={(e) => setConfig({ ...config, inputType: e.target.value })}>
-              <option value="text">Short answer</option>
-              <option value="choice">Single select</option>
-              <option value="multi">Multi-select</option>
-            </select>
+            <div className="space-y-2">
+              <label className="label mb-0">Answer type</label>
+              <FilterSelect
+                aria-label="Answer type"
+                options={ANSWER_TYPE_OPTIONS}
+                value={config.inputType || 'text'}
+                onChange={(inputType) => setConfig({ ...config, inputType })}
+                listClassName="bottom-full top-auto mb-2 mt-0"
+              />
+            </div>
             {(config.inputType === 'choice' || config.inputType === 'select' || config.inputType === 'multi' || config.inputType === 'radio') && (
               <label className="block text-sm text-zinc-400">
                 Answer options (one per line)
@@ -389,30 +765,41 @@ export function EntryActionBuilder({ actions, onChange, allowedActionTypes }: En
 
       {/* Action Templates */}
       {actions.length === 0 && (
-        <Card className="p-8 border-dashed border-2 border-zinc-700">
+        <Card className="p-8 border-dashed border-2 border-primary-500/25 bg-zinc-950/40">
           <div className="text-center">
-            <div className="inline-flex p-3 rounded-full bg-primary-500/10 text-primary-400 mb-4">
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="inline-flex p-3 rounded-full bg-primary-500/10 text-primary-400 mb-4 shadow-[0_0_22px_rgba(20,184,166,0.18)]"
+            >
               <Gift className="w-8 h-8" />
-            </div>
+            </motion.div>
             <h4 className="text-lg font-medium mb-2">No Entry Actions Yet</h4>
             <p className="text-zinc-400 mb-4">
               Add actions to let participants earn entries. More actions = more engagement!
             </p>
             <div className="grid grid-cols-3 gap-2 max-w-lg mx-auto">
-              {actionTypes.slice(0, 6).map((type) => {
+              {actionTypes.slice(0, 6).map((type, index) => {
                 const Icon = type.icon;
                 return (
-                  <button
+                  <motion.button
                     key={type.value}
+                    type="button"
+                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: reduceMotion ? 0 : index * 0.04, duration: 0.28 }}
                     onClick={() => {
                       setSelectedType(type.value);
+                      setActiveGroup(type.group);
                       setShowAddModal(true);
                     }}
-                    className="p-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors text-left"
+                    className="p-3 text-left card-interactive"
                   >
-                    <Icon className="w-5 h-5 mb-2 text-zinc-400" />
-                    <p className="text-sm">{type.label}</p>
-                  </button>
+                    <span className="inline-flex p-1.5 rounded-lg bg-primary-500/15 text-primary-200 mb-2">
+                      <Icon className="w-4 h-4" />
+                    </span>
+                    <p className="text-sm text-zinc-100 leading-snug">{type.label}</p>
+                  </motion.button>
                 );
               })}
             </div>
@@ -447,106 +834,132 @@ export function EntryActionBuilder({ actions, onChange, allowedActionTypes }: En
       )}
 
       {/* Add Action Modal */}
-      <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); resetForm(); }} title="Add Entry Action" size="lg">
-        <div className="space-y-6">
-          {/* Action Type Grid */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-3">Select Action Type</label>
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {ACTION_GROUPS.map((group) => (
-                <div key={group.id}>
-                  <p className="text-xs uppercase tracking-wide text-zinc-500 mb-1">{group.label}</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {actionTypes.filter((type) => type.group === group.id).map((type) => {
-                const Icon = type.icon;
-                const isSelected = selectedType === type.value;
-                const locked = isLocked(type.value);
-                return (
-                  <button
-                    key={type.value}
-                    type="button"
-                    disabled={locked}
-                    onClick={() => !locked && setSelectedType(type.value)}
-                    className={`p-3 text-left relative card-interactive ${
-                      locked
-                        ? 'opacity-60 cursor-not-allowed hover:translate-y-0 hover:shadow-none hover:border-primary-500/25'
-                        : isSelected
-                        ? 'card-interactive-selected'
-                        : ''
-                    }`}
-                  >
-                    <div className={`inline-flex p-1.5 rounded bg-gradient-to-br ${type.color} mb-2`}>
-                      <Icon className="w-4 h-4 text-white" />
-                    </div>
-                    <p className="text-sm font-medium">{type.label}</p>
-                    {locked && <p className="text-[10px] text-amber-400 mt-1">Upgrade to unlock</p>}
-                    {isSelected && !locked && (
-                      <div className="absolute top-2 right-2">
-                        <Check className="w-4 h-4 text-primary-400" />
-                      </div>
-                    )}
-                  </button>
-                );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Action Details */}
-          <div className="space-y-4">
-            <Input
-              label="Title"
-              placeholder={actionTypes.find(t => t.value === selectedType)?.label}
-              value={newAction.title || ''}
-              onChange={(e) => setNewAction({ ...newAction, title: e.target.value })}
-            />
-            <Input
-              label="Description (optional)"
-              placeholder="Explain what users need to do"
-              value={newAction.description || ''}
-              onChange={(e) => setNewAction({ ...newAction, description: e.target.value })}
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Points"
-                type="number"
-                min={1}
-                max={100}
-                value={newAction.points || 1}
-                onChange={(e) => setNewAction({ ...newAction, points: parseInt(e.target.value) || 1 })}
-              />
-              <div className="pt-7">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={newAction.required || false}
-                    onChange={(e) => setNewAction({ ...newAction, required: e.target.checked })}
-                    className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-primary-500"
-                  />
-                  <span>Required to enter</span>
-                </label>
-              </div>
-            </div>
-            
-            {/* Type-specific config */}
-            {renderConfigFields(
-              selectedType,
-              newAction.config || {},
-              (config) => setNewAction({ ...newAction, config }),
-              { dailyLimit: newAction.dailyLimit, setDailyLimit: (dailyLimit) => setNewAction({ ...newAction, dailyLimit }) }
-            )}
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => { setShowAddModal(false); resetForm(); }}
+        title="Add Entry Action"
+        size="lg"
+        footer={(
+          <>
             <Button variant="secondary" onClick={() => { setShowAddModal(false); resetForm(); }}>
               Cancel
             </Button>
             <Button onClick={handleAddAction} data-testid="builder-add-action-confirm">
+              <Plus className="w-4 h-4" />
               Add Action
             </Button>
+          </>
+        )}
+      >
+        <div className="space-y-6">
+          <div>
+            <div className="flex items-end justify-between gap-3 mb-3">
+              <label className="block text-sm font-medium text-zinc-300">Select action type</label>
+              <Badge size="sm" variant="info">{actionTypes.find((t) => t.value === selectedType)?.label}</Badge>
+            </div>
+            <GroupTablist reduceMotion={reduceMotion}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeGroup === 'ALL'}
+                onClick={() => setActiveGroup('ALL')}
+                className="builder-tab shrink-0 min-w-max  px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70"
+              >
+                All
+              </button>
+              {ACTION_GROUPS.map((group) => (
+                <button
+                  key={group.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeGroup === group.id}
+                  onClick={() => setActiveGroup(group.id)}
+                  className="builder-tab shrink-0 min-w-max px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70"
+                >
+                  {group.label}
+                </button>
+              ))}
+            </GroupTablist>
+
+            <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
+              {(activeGroup === 'ALL' ? ACTION_GROUPS : ACTION_GROUPS.filter((group) => group.id === activeGroup)).map((group) => {
+                const types = actionTypes.filter((type) => type.group === group.id);
+                if (types.length === 0) return null;
+                return (
+                  <div key={group.id}>
+                    {activeGroup === 'ALL' && (
+                      <p className="text-xs uppercase tracking-wide text-zinc-500 mb-2">{group.label}</p>
+                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {types.map((type, index) => (
+                        <ActionTypeTile
+                          key={type.value}
+                          type={type.value}
+                          label={type.label}
+                          selected={selectedType === type.value}
+                          locked={isLocked(type.value)}
+                          index={index}
+                          reduceMotion={reduceMotion}
+                          onSelect={() => setSelectedType(type.value)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={selectedType}
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="space-y-4 rounded-xl border border-primary-500/20 bg-zinc-950/40 p-4"
+            >
+              <Input
+                label="Title"
+                placeholder={actionTypes.find((t) => t.value === selectedType)?.label}
+                value={newAction.title || ''}
+                onChange={(e) => setNewAction({ ...newAction, title: e.target.value })}
+              />
+              <Input
+                label="Description (optional)"
+                placeholder="Explain what users need to do"
+                value={newAction.description || ''}
+                onChange={(e) => setNewAction({ ...newAction, description: e.target.value })}
+              />
+              <div className="grid grid-cols-2 gap-4 items-end">
+                <Input
+                  label="Points"
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={newAction.points || 1}
+                  onChange={(e) => setNewAction({ ...newAction, points: parseInt(e.target.value) || 1 })}
+                />
+                <div className="pb-1">
+                  <RequiredToggle
+                    checked={newAction.required || false}
+                    onChange={(required) => setNewAction({ ...newAction, required })}
+                    label="Required to enter"
+                  />
+                </div>
+              </div>
+
+              {renderConfigFields(
+                selectedType,
+                newAction.config || {},
+                (config) => setNewAction((prev) => ({ ...prev, config })),
+                {
+                  dailyLimit: newAction.dailyLimit,
+                  patch: (next) => setNewAction((prev) => ({ ...prev, ...next })),
+                }
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </Modal>
 
@@ -569,7 +982,7 @@ export function EntryActionBuilder({ actions, onChange, allowedActionTypes }: En
               value={editingAction.description}
               onChange={(e) => setEditingAction({ ...editingAction, description: e.target.value })}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 items-end">
               <Input
                 label="Points"
                 type="number"
@@ -577,24 +990,23 @@ export function EntryActionBuilder({ actions, onChange, allowedActionTypes }: En
                 value={editingAction.points}
                 onChange={(e) => setEditingAction({ ...editingAction, points: parseInt(e.target.value) || 1 })}
               />
-              <div className="pt-7">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editingAction.required}
-                    onChange={(e) => setEditingAction({ ...editingAction, required: e.target.checked })}
-                    className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-primary-500"
-                  />
-                  <span>Required</span>
-                </label>
+              <div className="pb-1">
+                <RequiredToggle
+                  checked={editingAction.required}
+                  onChange={(required) => setEditingAction({ ...editingAction, required })}
+                  label="Required"
+                />
               </div>
             </div>
             
             {renderConfigFields(
               editingAction.type,
               editingAction.config,
-              (config) => setEditingAction({ ...editingAction, config }),
-              { dailyLimit: editingAction.dailyLimit, setDailyLimit: (dailyLimit) => setEditingAction({ ...editingAction, dailyLimit }) }
+              (config) => setEditingAction((prev) => (prev ? { ...prev, config } : prev)),
+              {
+                dailyLimit: editingAction.dailyLimit,
+                patch: (next) => setEditingAction((prev) => (prev ? { ...prev, ...next } : prev)),
+              }
             )}
 
             <div className="flex justify-end gap-3 pt-4">

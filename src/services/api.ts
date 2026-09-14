@@ -3,8 +3,26 @@ import { useAuthStore } from '../store/authStore';
 import { useWorkspaceStore } from '../store/workspaceStore';
 import { participantSessionHeaders } from '../utils/participantSession';
 
+/**
+ * API origin for axios.
+ * - Dev default: `/api` (Vite proxies to backend :3001)
+ * - Override with VITE_API_URL, e.g. `http://127.0.0.1:3001/api`
+ * Browser Network may still show localhost:5173/api when using the proxy — that is normal.
+ */
+function resolveApiBaseUrl() {
+  const raw = (import.meta.env.VITE_API_URL || '/api').trim().replace(/\/$/, '');
+  if (!raw) return '/api';
+  // Allow either `http://host:3001` or `http://host:3001/api`
+  if (/^https?:\/\//i.test(raw)) {
+    return raw.endsWith('/api') ? raw : `${raw}/api`;
+  }
+  return raw.startsWith('/') ? raw : `/${raw}`;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   timeout: 20_000,
   headers: {
     'Content-Type': 'application/json',
@@ -12,7 +30,7 @@ const api = axios.create({
 });
 
 const publicClient = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   timeout: 20_000,
   headers: {
     'Content-Type': 'application/json',
@@ -55,7 +73,7 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const response = await axios.post('/api/auth/refresh', { refreshToken });
+          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
           const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data.data;
 
           const { user } = useAuthStore.getState();
@@ -87,6 +105,7 @@ api.interceptors.response.use(
 );
 
 export default api;
+export { API_BASE_URL };
 
 // Auth API
 export const authApi = {

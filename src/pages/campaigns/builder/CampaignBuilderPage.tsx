@@ -472,8 +472,9 @@ export function CampaignBuilderPage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8" data-testid="builder-ready">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-zinc-800 bg-zinc-950/80 sticky top-0 z-20">
-        <div className="flex items-center gap-3 min-w-0">
+      {/* Plain sticky — avoid motion/transform on this node (breaks position:sticky) */}
+      <div className="builder-sticky-bar sticky top-0 z-20 flex items-center justify-between gap-3 px-4 py-3 border-b border-zinc-800 bg-zinc-950">
+        <div className="relative z-[1] flex items-center gap-3 min-w-0">
           <Link to={state.campaignId ? `/campaigns/${state.campaignId}` : '/campaigns'} className="p-2 rounded-lg hover:bg-zinc-800" aria-label="Back to campaigns">
             <ArrowLeft className="w-5 h-5" />
           </Link>
@@ -487,7 +488,7 @@ export function CampaignBuilderPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="relative z-[1] flex items-center gap-2">
           <Button type="button" variant="secondary" size="sm" className="lg:hidden" data-testid="builder-toggle-preview" onClick={() => setShowPreview(!showPreview)}>
             <Eye className="w-4 h-4" /> Preview
           </Button>
@@ -510,7 +511,7 @@ export function CampaignBuilderPage() {
         </div>
       </div>
 
-      <div className="flex overflow-x-auto gap-1 px-4 py-2 border-b border-zinc-800" role="tablist" aria-label="Campaign builder steps">
+      <div className="builder-tablist flex overflow-x-auto gap-1.5 px-4 py-2.5 border-b border-zinc-800" role="tablist" aria-label="Campaign builder steps">
         {BUILDER_STEPS.map((item, index) => (
           <button
             key={item.id}
@@ -518,9 +519,10 @@ export function CampaignBuilderPage() {
             role="tab"
             aria-selected={index === state.step}
             onClick={() => patch({ step: index })}
-            className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${index === state.step ? 'bg-primary-500 text-white' : 'text-zinc-400 hover:bg-zinc-800'}`}
+            className="builder-tab px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70"
           >
-            {index + 1}. {item.label}
+            <span className="builder-tab__index">{index + 1}</span>
+            <span className="builder-tab__label">{item.label}</span>
           </button>
         ))}
       </div>
@@ -557,7 +559,7 @@ export function CampaignBuilderPage() {
             <div className="space-y-4 max-w-xl">
               <Input label="Campaign title" value={state.title} onChange={(e) => patch({ title: e.target.value })} required />
               <label className="block text-sm text-zinc-400" htmlFor="campaign-description">Description</label>
-              <textarea id="campaign-description" className="input min-h-[100px]" value={state.description} onChange={(e) => patch({ description: e.target.value })} />
+              <textarea id="campaign-description" className="input min-h-[100px] py-2" value={state.description} onChange={(e) => patch({ description: e.target.value })} />
               {state.slug && <p className="text-sm text-zinc-500">Public URL: /c/{state.slug} (slug is generated automatically)</p>}
               <Input label="Featured image URL" value={state.featuredImage} onChange={(e) => patch({ featuredImage: e.target.value })} placeholder="https://" />
               <Input
@@ -714,11 +716,11 @@ export function CampaignBuilderPage() {
               </label>
               <RulesGenerator campaignId={state.campaignId} onRulesGenerated={(rules) => patch({ officialRules: rules })} />
               <label className="block text-sm text-zinc-400" htmlFor="official-rules">Official rules</label>
-              <textarea id="official-rules" className="input min-h-[160px]" value={state.officialRules} onChange={(e) => patch({ officialRules: e.target.value })} />
+              <textarea id="official-rules" className="input min-h-[160px] py-2" value={state.officialRules} onChange={(e) => patch({ officialRules: e.target.value })} />
               <label className="block text-sm text-zinc-400" htmlFor="terms">Terms</label>
-              <textarea id="terms" className="input min-h-[100px]" value={state.termsConditions} onChange={(e) => patch({ termsConditions: e.target.value })} />
+              <textarea id="terms" className="input min-h-[100px] py-2" value={state.termsConditions} onChange={(e) => patch({ termsConditions: e.target.value })} />
               <label className="block text-sm text-zinc-400" htmlFor="privacy">Privacy policy</label>
-              <textarea id="privacy" className="input min-h-[100px]" value={state.privacyPolicy} onChange={(e) => patch({ privacyPolicy: e.target.value })} />
+              <textarea id="privacy" className="input min-h-[100px] py-2" value={state.privacyPolicy} onChange={(e) => patch({ privacyPolicy: e.target.value })} />
             </div>
           )}
 

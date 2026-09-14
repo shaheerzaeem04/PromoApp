@@ -231,7 +231,22 @@ Verify from the banner or Settings. Unverified accounts can still build campaign
 export function searchHelpArticles(query: string) {
   const q = query.trim().toLowerCase();
   if (!q) return HELP_ARTICLES;
-  return HELP_ARTICLES.filter((article) =>
-    `${article.title} ${article.summary} ${article.body} ${article.category}`.toLowerCase().includes(q)
-  );
+
+  return HELP_ARTICLES
+    .map((article) => {
+      const title = article.title.toLowerCase();
+      const summary = article.summary.toLowerCase();
+      const category = article.category.toLowerCase();
+      const body = article.body.toLowerCase();
+      let score = 0;
+      if (title.startsWith(q)) score += 6;
+      else if (title.includes(q)) score += 4;
+      if (summary.includes(q)) score += 2;
+      if (category.includes(q)) score += 2;
+      if (body.includes(q)) score += 1;
+      return { article, score };
+    })
+    .filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score || a.article.title.localeCompare(b.article.title))
+    .map((row) => row.article);
 }

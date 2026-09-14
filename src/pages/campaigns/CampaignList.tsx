@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   Plus,
   Search,
@@ -41,8 +42,15 @@ const statusOptions: FilterSelectOption[] = [
   { value: 'ENDED', label: 'Ended', hint: 'Campaign finished', dotClassName: 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.45)]' },
 ];
 
+function campaignMatchesQuery(campaign: { title?: string; slug?: string }, query: string) {
+  if (!query) return true;
+  const haystack = `${campaign.title || ''} ${campaign.slug || ''}`.toLowerCase();
+  return haystack.includes(query);
+}
+
 export function CampaignListPage() {
   const queryClient = useQueryClient();
+  const reduceMotion = useReducedMotion();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
@@ -106,14 +114,22 @@ export function CampaignListPage() {
     staleTime: 15_000,
   });
 
-  const campaigns = data?.data.data?.filter((c: any) =>
-    c.title.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  const query = search.trim().toLowerCase();
+  const pool = data?.data.data;
+  const campaigns = useMemo(
+    () => (pool || []).filter((campaign: { title?: string; slug?: string }) => campaignMatchesQuery(campaign, query)),
+    [pool, query]
+  );
+  const filtersActive = Boolean(query || status);
+
+  useEffect(() => {
+    setMenuOpen(null);
+  }, [query, status]);
 
   if (isLoading) return <PageSpinner />;
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-7xl">
       <PageHeader
         title="Campaigns"
         description="Create, publish, and manage giveaways."
@@ -149,16 +165,31 @@ export function CampaignListPage() {
 
       {campaigns.length > 0 ? (
         <div className="divide-y divide-zinc-800/70 border-t border-zinc-800/70">
-          {campaigns.map((campaign: any) => (
-            <div
+          <AnimatePresence initial={false}>
+            {campaigns.map((campaign: any, index: number) => (
+            <motion.div
               key={campaign.id}
               data-testid="campaign-card"
-              className={`flex items-start gap-4 py-4 relative ${menuOpen === campaign.id ? 'z-20' : ''}`}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+              transition={{
+                duration: reduceMotion ? 0.12 : 0.22,
+                delay: reduceMotion ? 0 : Math.min(index * 0.025, 0.16),
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className={cn(
+                'campaign-row flex items-start gap-4 py-2 -mx-2 px-3',
+                menuOpen === campaign.id && 'is-open'
+              )}
             >
               <Link to={`/campaigns/${campaign.id}`} className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-medium text-zinc-50" data-testid="campaign-title">{campaign.title}</h3>
                   <Badge variant={statusColors[campaign.status]} size="sm">{campaign.status}</Badge>
+                  {campaign.status === 'ACTIVE' && (
+                    <span className="dash-pulse hidden sm:inline-block h-1.5 w-1.3 rounded-full bg-emerald-400" />
+                  )}
                 </div>
                 {campaign.description && (
                   <p className="text-sm text-zinc-500 mt-1 line-clamp-1">{campaign.description}</p>
@@ -294,16 +325,17 @@ export function CampaignListPage() {
                   </div>
                 )}
               </div>
-            </div>
-          ))}
+            </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       ) : (
         <EmptyState
           data-testid="campaigns-empty"
           icon={<Gift className="w-5 h-5" />}
-          title="No campaigns found"
-          description={search || status ? 'Try adjusting your filters' : 'Create a giveaway from scratch or a template. You can save a draft before publishing.'}
-          action={!search && !status ? (
+          title={filtersActive ? 'No campaigns match' : 'No campaigns found'}
+          description={filtersActive ? 'Clear search or status to see the rest of the list.' : 'Create a giveaway from scratch or a template. You can save a draft before publishing.'}
+          action={!filtersActive ? (
             <Link to={billing.data?.needsPlan ? '/choose-plan' : '/campaigns/new'}>
               <Button>
                 <Plus className="w-4 h-4" />

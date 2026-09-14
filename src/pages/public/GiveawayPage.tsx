@@ -221,7 +221,7 @@ function GiveawayContent({ forcedSlug }: { forcedSlug?: string }) {
       <h2 className="text-lg font-semibold mb-4" style={{ fontFamily: 'var(--c-heading)' }}>Enter to win</h2>
       <form onSubmit={handleEnter} className="space-y-3.5">
         <div className="relative">
-          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--c-muted)' }} />
           <input
             type="email"
             placeholder="Your email address"
@@ -229,13 +229,12 @@ function GiveawayContent({ forcedSlug }: { forcedSlug?: string }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full pl-11 pr-4 py-3 bg-transparent border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/40"
-            style={{ borderColor: 'color-mix(in srgb, var(--c-muted) 35%, transparent)', borderRadius: 'var(--c-radius)' }}
+            className="giveaway-field giveaway-field--icon"
           />
         </div>
         {data.requireName && (
           <div className="relative">
-            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--c-muted)' }} />
             <input
               type="text"
               placeholder="Your name"
@@ -243,14 +242,13 @@ function GiveawayContent({ forcedSlug }: { forcedSlug?: string }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full pl-11 pr-4 py-3 bg-transparent border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/40"
-              style={{ borderColor: 'color-mix(in srgb, var(--c-muted) 35%, transparent)', borderRadius: 'var(--c-radius)' }}
+              className="giveaway-field giveaway-field--icon"
             />
           </div>
         )}
         {data.requirePhone && (
           <div className="relative">
-            <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--c-muted)' }} />
             <input
               type="tel"
               inputMode="tel"
@@ -259,8 +257,7 @@ function GiveawayContent({ forcedSlug }: { forcedSlug?: string }) {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
-              className="w-full pl-11 pr-4 py-3 bg-transparent border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/40"
-              style={{ borderColor: 'color-mix(in srgb, var(--c-muted) 35%, transparent)', borderRadius: 'var(--c-radius)' }}
+              className="giveaway-field giveaway-field--icon"
             />
           </div>
         )}
@@ -270,8 +267,7 @@ function GiveawayContent({ forcedSlug }: { forcedSlug?: string }) {
           type="submit"
           data-testid="giveaway-enter"
           disabled={enterMutation.isPending}
-          className="w-full py-3 px-6 font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-          style={{ background: 'var(--c-button)', color: 'var(--c-button-text)', borderRadius: 'var(--c-radius)' }}
+          className="giveaway-btn"
         >
           {enterMutation.isPending ? 'Entering...' : 'Enter giveaway'}
         </button>
@@ -454,7 +450,7 @@ function GiveawayContent({ forcedSlug }: { forcedSlug?: string }) {
         )}
       </div>
       {(data.officialRules || data.termsConditions || data.privacyPolicy) && (
-        <div className="max-w-lg mx-auto px-4 pb-10 text-xs space-y-2" style={{ color: 'var(--c-muted)' }}>
+        <div className="giveaway-legal max-w-lg mx-auto px-4 pb-10 text-xs space-y-2" style={{ color: 'var(--c-muted)' }}>
           {data.officialRules && (
             <details>
               <summary className="cursor-pointer font-medium">Official rules</summary>

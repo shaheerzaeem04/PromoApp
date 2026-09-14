@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Card, Badge, PageSpinner } from '../../components/ui';
+import { ArrowRight } from 'lucide-react';
+import { Card, PageSpinner } from '../../components/ui';
 import { docsApi } from '../../services/api';
 
 type IntegrationCategory = {
@@ -32,6 +33,18 @@ const CATEGORIES: IntegrationCategory[] = [
 
 function formatAuthType(authType?: string) {
   return String(authType || '').replace(/_/g, ' ');
+}
+
+function providerMark(name: string) {
+  const letters = name
+    .replace(/[^a-zA-Z0-9 ]/g, '')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase();
+  return letters || name.slice(0, 2).toUpperCase();
 }
 
 export function MarketingIntegrationsPage() {
@@ -65,40 +78,72 @@ export function MarketingIntegrationsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-16">
-      <h1 className="text-4xl font-display font-bold">{PAGE.title}</h1>
-      <p className="text-zinc-400 mt-3">{PAGE.description}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary-600 mb-3">
+        Connect your stack
+      </p>
+      <h1 className="text-4xl font-display font-bold text-[#0B1020]">{PAGE.title}</h1>
+      <p className="text-[#667085] mt-3 max-w-2xl leading-relaxed">{PAGE.description}</p>
 
       {sections.map((section) => (
         <section key={section.id} className="mt-12">
-          <h2 className="font-semibold text-lg mb-4">{section.label}</h2>
+          <div className="flex items-center gap-3 mb-5">
+            <h2 className="font-semibold text-lg text-[#0B1020]">{section.label}</h2>
+            <span className="h-px flex-1 bg-[#E8EAF0]" />
+            <span className="text-xs text-[#667085]">{section.items.length}</span>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {section.items.map((item: any) => (
               <Card
                 key={item.type}
-                hover
-                className="p-5 card-interactive group"
+                padding="none"
+                className="card-interactive group overflow-hidden p-0"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-semibold group-hover:text-primary-300 transition-colors duration-[400ms]">{item.name}</h3>
-                    <p className="text-sm text-zinc-400 mt-1">{item.description}</p>
+                <div className="p-5">
+                  <div className="flex items-start gap-3.5">
+                    <span
+                      className="w-11 h-11 rounded-xl bg-primary-50 text-primary-700 text-sm font-semibold flex items-center justify-center shrink-0 border border-primary-500/15 transition-all duration-300 group-hover:bg-primary-500 group-hover:text-zinc-950 group-hover:border-primary-500 group-hover:scale-105"
+                      aria-hidden
+                    >
+                      {providerMark(item.name || item.type)}
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="font-semibold text-[#0B1020] transition-colors duration-300 group-hover:text-primary-700">
+                          {item.name}
+                        </h3>
+                        <span className="shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide bg-primary-50 text-primary-700 border border-primary-500/15 transition-colors duration-300 group-hover:bg-primary-500/15">
+                          {item.minPlan}
+                        </span>
+                      </div>
+                      <p className="text-sm text-[#667085] mt-1.5 leading-relaxed line-clamp-2">
+                        {item.description}
+                      </p>
+                    </div>
                   </div>
-                  <Badge>{item.minPlan}</Badge>
+
+                  <div className="mt-4 flex items-center justify-between gap-3 pt-3 border-t border-[#E8EAF0] group-hover:border-primary-500/20 transition-colors duration-300">
+                    <p className="text-xs text-[#667085]">
+                      Auth: {formatAuthType(item.authType)}
+                      {item.oauthLiveQaRequired ? ' · Live OAuth QA pending' : ''}
+                    </p>
+                    <Link
+                      to={PAGE.ctaTo}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 transition-all duration-300 group-hover:text-primary-700 group-hover:gap-2.5"
+                    >
+                      {PAGE.ctaLabel}
+                      <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                    </Link>
+                  </div>
                 </div>
-                <p className="text-xs text-zinc-500 mt-3">
-                  Auth: {formatAuthType(item.authType)}
-                  {item.oauthLiveQaRequired ? ' · Live OAuth QA pending' : ''}
-                </p>
-                <Link to={PAGE.ctaTo} className="inline-block mt-4 text-sm text-primary-400 group-hover:text-primary-300 transition-colors duration-[400ms]">
-                  {PAGE.ctaLabel}
-                </Link>
               </Card>
             ))}
           </div>
         </section>
       ))}
 
-      <p className="text-sm text-zinc-500 mt-12">{PAGE.footer}</p>
+      <p className="text-sm text-[#667085] mt-12 leading-relaxed">{PAGE.footer}</p>
     </div>
   );
 }

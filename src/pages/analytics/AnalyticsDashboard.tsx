@@ -43,7 +43,7 @@ export function AnalyticsDashboardPage() {
   if (isError) return <Card className="p-8 text-center text-zinc-400">Could not load analytics.</Card>;
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="space-y-8 max-w-7xl">
       <PageHeader
         title="Analytics"
         description="Aggregated campaign performance"

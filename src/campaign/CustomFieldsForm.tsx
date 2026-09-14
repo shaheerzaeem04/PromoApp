@@ -17,14 +17,16 @@ export function CustomFieldsForm({ fields, values, onChange, errors = {}, disabl
         const error = errors[field.id];
         const inputId = `custom-field-${field.id}`;
         const options = Array.isArray(field.options) ? field.options.map(String) : [];
-        const common = 'w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/50';
+        const common = 'giveaway-field';
         return (
           <div key={field.id}>
             <label className="block text-sm mb-1" htmlFor={inputId}>
               {field.label}
               {field.required ? ' *' : ' (optional)'}
             </label>
-            {field.helpText && <p className="text-xs text-zinc-500 mb-1">{field.helpText}</p>}
+            {field.helpText && (
+              <p className="text-xs mb-1" style={{ color: 'var(--c-muted)' }}>{field.helpText}</p>
+            )}
             {field.fieldType === 'TEXTAREA' || field.fieldType === 'ADDRESS' ? (
               <textarea
                 id={inputId}

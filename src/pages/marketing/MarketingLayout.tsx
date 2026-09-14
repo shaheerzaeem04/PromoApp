@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Menu, Trophy, X } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
@@ -38,13 +38,71 @@ const footerColumns = [
   },
 ];
 
+function useScrollProgress() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      const doc = document.documentElement;
+      const max = doc.scrollHeight - doc.clientHeight;
+      setProgress(max > 0 ? Math.min(1, Math.max(0, doc.scrollTop / max)) : 0);
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+
+  return progress;
+}
+
 export function MarketingLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+  const progress = useScrollProgress();
+
+  useEffect(() => {
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <div className="marketing-shell min-h-screen bg-white text-[#0B1020] overflow-x-hidden" style={{ colorScheme: 'light' }}>
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-transparent supports-[backdrop-filter]:bg-white/80 data-[scrolled]:border-[#E8EAF0] h-[68px] flex items-center border-[#E8EAF0]/80">
+      <div
+        className="marketing-shell-progress"
+        style={{
+          width: `${progress * 100}%`,
+          opacity: progress > 0.01 ? 1 : 0,
+        }}
+        aria-hidden
+      />
+
+      <header
+        data-scrolled={scrolled ? '' : undefined}
+        className={`sticky top-0 z-40 h-[68px] flex items-center border-b transition-[background-color,border-color,box-shadow] duration-300 ${
+          scrolled
+            ? 'bg-white/90 backdrop-blur-md border-[#E8EAF0] shadow-[0_1px_0_rgba(15,23,42,0.04)]'
+            : 'bg-white/90 backdrop-blur-md border-[#E8EAF0]/80'
+        }`}
+      >
         <div className="max-w-[1180px] mx-auto px-4 sm:px-6 w-full flex items-center justify-between gap-3 min-w-0">
           <Link to="/" className="flex items-center gap-2.5 font-semibold text-lg shrink-0 tracking-tight text-[#0B1020]">
             <span className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">

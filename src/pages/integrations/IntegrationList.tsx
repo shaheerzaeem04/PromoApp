@@ -113,7 +113,7 @@ export function IntegrationListPage() {
   if (isLoading) return <PageSpinner />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl">
       <PageHeader
         title="Integrations"
         description="Connect email, CRM, and automation tools. Tracking pixels live on each campaign’s Design step — they are not integrations."
