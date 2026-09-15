@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, Input } from '../../components/ui';
+import { Button, Form, TextField } from '../../components/ui';
 import { authApi } from '../../services/api';
 
 interface ForgotPasswordForm {
@@ -15,11 +15,9 @@ export function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ForgotPasswordForm>();
+  const { control, handleSubmit } = useForm<ForgotPasswordForm>({
+    defaultValues: { email: '' },
+  });
 
   const onSubmit = async (data: ForgotPasswordForm) => {
     setLoading(true);
@@ -57,20 +55,35 @@ export function ForgotPasswordPage() {
           </Link>
         </div>
       ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          <Input
-            label="Email"
-            type="email"
-            placeholder="you@example.com"
-            icon={<Mail className="w-5 h-5" />}
-            error={errors.email?.message}
-            {...register('email', {
+        <Form onSubmit={handleSubmit(onSubmit)} validationBehavior="aria">
+          <Controller
+            control={control}
+            name="email"
+            rules={{
               required: 'Email is required',
               pattern: {
                 value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                 message: 'Invalid email address',
               },
-            })}
+            }}
+            render={({ field, fieldState }) => (
+              <TextField
+                label="Email"
+                name={field.name}
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                icon={<Mail className="w-5 h-5" />}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                inputRef={field.ref}
+                isRequired
+                validationBehavior="aria"
+                isInvalid={fieldState.invalid}
+                errorMessage={fieldState.error?.message}
+              />
+            )}
           />
 
           <Button type="submit" className="w-full" loading={loading}>
@@ -82,7 +95,7 @@ export function ForgotPasswordPage() {
               Back to sign in
             </Link>
           </p>
-        </form>
+        </Form>
       )}
     </motion.div>
   );

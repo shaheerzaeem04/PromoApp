@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Search, X } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { HELP_ARTICLES, searchHelpArticles, type HelpCategory } from '../../content/help/articles';
-import { Input } from '../../components/ui';
+import { SearchField } from '../../components/ui';
 import { docsApi } from '../../services/api';
 
 const CATEGORIES: HelpCategory[] = [
@@ -41,28 +41,15 @@ export function HelpCentrePage() {
         Guides for the current PromoApp product. Search is client-side.
       </p>
 
-      <div className="mt-8 relative">
-        <div className="relative group/search">
-          <Input
-            placeholder="Search articles…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            icon={<Search className="w-5 h-5 transition-colors duration-200 group-focus-within/search:text-primary-600" />}
-            className="pr-11 rounded-xl h-12 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
-            data-testid="help-search"
-            aria-label="Search help articles"
-          />
-          {trimmed && (
-            <button
-              type="button"
-              onClick={() => setQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#667085] hover:text-primary-700 hover:bg-primary-50 transition-colors"
-              aria-label="Clear search"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+      <div className="mt-8">
+        <SearchField
+          aria-label="Search help articles"
+          placeholder="Search articles…"
+          value={query}
+          onChange={setQuery}
+          size="lg"
+          data-testid="help-search"
+        />
         <p className="mt-2.5 text-xs text-[#667085]">
           {trimmed
             ? `${results.length} result${results.length === 1 ? '' : 's'} for “${trimmed}”`

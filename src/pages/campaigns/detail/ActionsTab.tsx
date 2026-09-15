@@ -19,7 +19,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus, Trash2, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Card, Button, Input, Modal, Select, Badge } from '../../../components/ui';
+import { Card, Button, Input, Modal, Select, Badge, Checkbox } from '../../../components/ui';
 import { campaignApi } from '../../../services/api';
 import { apiErrorMessage, entryActionTypes } from './constants';
 
@@ -311,15 +311,12 @@ function ActionFormModal({
         {form.type === 'SECRET_CODE' && (
           <p className="text-sm text-zinc-500">Participants redeem codes from the Secret Codes tab. This action is completed when a code is accepted.</p>
         )}
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={form.required}
-            onChange={(e) => setForm({ ...form, required: e.target.checked })}
-            className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-primary-500"
-          />
-          <span>Required to enter</span>
-        </label>
+        <Checkbox
+          isSelected={form.required}
+          onChange={(checked) => setForm({ ...form, required: checked })}
+        >
+          Required to enter
+        </Checkbox>
         <div className="flex justify-end gap-3 pt-4">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={onSubmit} loading={loading} disabled={!form.title.trim()}>{submitLabel}</Button>

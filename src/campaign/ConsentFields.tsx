@@ -1,3 +1,5 @@
+import { Checkbox } from '../components/ui';
+
 interface ConsentFieldsProps {
   campaign: any;
   consent: { terms?: boolean; privacy?: boolean; rules?: boolean };
@@ -15,22 +17,37 @@ export function ConsentFields({ campaign, consent, onChange, disabled }: Consent
   return (
     <div className="space-y-2 text-sm">
       {needsTerms && (
-        <label className="flex items-start gap-2">
-          <input type="checkbox" disabled={disabled} checked={Boolean(consent.terms)} onChange={(e) => onChange({ ...consent, terms: e.target.checked })} required />
-          <span>I accept the terms</span>
-        </label>
+        <Checkbox
+          tone="giveaway"
+          isDisabled={disabled}
+          isRequired
+          isSelected={Boolean(consent.terms)}
+          onChange={(checked) => onChange({ ...consent, terms: checked })}
+        >
+          I accept the terms
+        </Checkbox>
       )}
       {needsPrivacy && (
-        <label className="flex items-start gap-2">
-          <input type="checkbox" disabled={disabled} checked={Boolean(consent.privacy)} onChange={(e) => onChange({ ...consent, privacy: e.target.checked })} required />
-          <span>I accept the privacy policy</span>
-        </label>
+        <Checkbox
+          tone="giveaway"
+          isDisabled={disabled}
+          isRequired
+          isSelected={Boolean(consent.privacy)}
+          onChange={(checked) => onChange({ ...consent, privacy: checked })}
+        >
+          I accept the privacy policy
+        </Checkbox>
       )}
       {needsRules && (
-        <label className="flex items-start gap-2">
-          <input type="checkbox" disabled={disabled} checked={Boolean(consent.rules)} onChange={(e) => onChange({ ...consent, rules: e.target.checked })} required />
-          <span>I accept the official rules</span>
-        </label>
+        <Checkbox
+          tone="giveaway"
+          isDisabled={disabled}
+          isRequired
+          isSelected={Boolean(consent.rules)}
+          onChange={(checked) => onChange({ ...consent, rules: checked })}
+        >
+          I accept the official rules
+        </Checkbox>
       )}
     </div>
   );

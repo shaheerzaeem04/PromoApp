@@ -6,6 +6,26 @@ import { Card, Badge, Button, FilterSelect, PageSpinner, Modal, PageHeader } fro
 import type { FilterSelectOption } from '../../components/ui';
 import { integrationsApi, publishingApi } from '../../services/api';
 
+const PROVIDER_DOT: Record<string, string> = {
+  MAILCHIMP: 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.45)]',
+  KLAVIYO: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.45)]',
+  CONVERTKIT: 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.45)]',
+  ACTIVECAMPAIGN: 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.45)]',
+  OMNISEND: 'bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.45)]',
+  BEEHIIV: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.45)]',
+  MAILERLITE: 'bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.45)]',
+  GETRESPONSE: 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.45)]',
+  DRIP: 'bg-fuchsia-400 shadow-[0_0_8px_rgba(232,121,249,0.45)]',
+  AWEBER: 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.45)]',
+  CAMPAIGN_MONITOR: 'bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.45)]',
+  BREVO: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.45)]',
+  MAILJET: 'bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.45)]',
+  KEAP: 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.45)]',
+  CUSTOM_WEBHOOK: 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.45)]',
+  ZAPIER: 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.45)]',
+  GOOGLE_SHEETS: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.45)]',
+};
+
 const STATUS: FilterSelectOption[] = [
   { value: '', label: 'All Statuses', hint: 'Show every delivery', dotClassName: 'bg-primary-400 shadow-[0_0_8px_rgba(45,212,191,0.45)]' },
   { value: 'SUCCESS', label: 'Success', hint: 'Delivered successfully', dotClassName: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.45)]' },
@@ -14,7 +34,7 @@ const STATUS: FilterSelectOption[] = [
   { value: 'RETRYING', label: 'Retrying', hint: 'Automatic retry in progress', dotClassName: 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.45)]' },
 ];
 
-export function DeliveryLogPage() {
+export function DeliveryLogPage({ embedded = false }: { embedded?: boolean }) {
   const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const [detail, setDetail] = useState<any>(null);
@@ -57,8 +77,10 @@ export function DeliveryLogPage() {
     ...(integrations?.data?.data || []).map((row: any) => ({
       value: row.type as string,
       label: row.name as string,
-      hint: row.type as string,
-      dotClassName: 'bg-zinc-400',
+      hint: String(row.type || '').replace(/_/g, ' '),
+      dotClassName:
+        PROVIDER_DOT[row.type as string] ||
+        'bg-zinc-400 shadow-[0_0_8px_rgba(161,161,170,0.35)]',
     })),
   ];
 
@@ -71,7 +93,7 @@ export function DeliveryLogPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Delivery log" description="Outbound integration attempts. Secrets are never shown." />
+      {!embedded && <PageHeader title="Delivery log" description="Outbound integration attempts. Secrets are never shown." />}
       <Card className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
         <FilterSelect
           options={providerOptions}
@@ -87,7 +109,9 @@ export function DeliveryLogPage() {
           aria-label="Filter by status"
           data-testid="delivery-status-filter"
         />
-        <Link to="/integrations" className="text-sm text-primary-400 self-center">Back to integrations</Link>
+        {!embedded && (
+          <Link to="/integrations" className="text-sm text-primary-400 self-center">Back to integrations</Link>
+        )}
       </Card>
       {isLoading ? (
         <PageSpinner />

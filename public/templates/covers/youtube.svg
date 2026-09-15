@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dc2626"/>
+      <stop offset="1" stop-color="#7f1d1d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".78" cy=".18" r=".7">
+      <stop offset="0" stop-color="#fecaca" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#fecaca" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#fff" fill-opacity=".12"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="500" fill="#09090b"/>
+  <rect width="800" height="500" fill="url(#g)"/>
+  <rect width="800" height="500" fill="url(#glow)"/>
+  <rect width="800" height="500" fill="url(#dots)"/>
+  <circle cx="120" cy="400" r="140" fill="#000" fill-opacity=".16"/>
+  
+    <rect x="250" y="160" width="300" height="180" rx="36" fill="#fff" fill-opacity=".95"/>
+    <polygon points="370,210 370,290 460,250" fill="#dc2626"/>
+</svg>

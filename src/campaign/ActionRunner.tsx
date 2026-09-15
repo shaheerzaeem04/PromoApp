@@ -3,6 +3,7 @@ import { Check, ChevronRight, Gift } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { publicApi } from '../services/api';
 import { getActionDefinition, socialDestinationUrl, verificationLabelForMode } from './actionCatalog';
+import { Checkbox, CheckboxGroup } from '../components/ui';
 
 interface ActionRunnerProps {
   slug: string;
@@ -110,22 +111,18 @@ export function ActionRunner({
               <div className="mt-3 space-y-2">
                 <p className="text-sm">{action.config?.question || action.title}</p>
                 {inputType === 'multi' ? (
-                  options.map((option: string) => {
-                    const selected = Array.isArray(answers[action.id]) ? answers[action.id] : [];
-                    return (
-                      <label key={option} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={selected.includes(option)}
-                          onChange={(e) => {
-                            const next = e.target.checked ? [...selected, option] : selected.filter((item: string) => item !== option);
-                            setAnswers((prev) => ({ ...prev, [action.id]: next }));
-                          }}
-                        />
+                  <CheckboxGroup
+                    tone="giveaway"
+                    aria-label={action.config?.question || action.title}
+                    value={Array.isArray(answers[action.id]) ? answers[action.id] : []}
+                    onChange={(next) => setAnswers((prev) => ({ ...prev, [action.id]: next }))}
+                  >
+                    {options.map((option: string) => (
+                      <Checkbox key={option} value={option} tone="giveaway">
                         {option}
-                      </label>
-                    );
-                  })
+                      </Checkbox>
+                    ))}
+                  </CheckboxGroup>
                 ) : inputType === 'select' || inputType === 'choice' || inputType === 'radio' ? (
                   options.map((option: string) => (
                     <label key={option} className="flex items-center gap-2 text-sm">

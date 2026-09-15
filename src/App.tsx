@@ -6,8 +6,8 @@ import { PageSpinner, RouteSpinner } from './components/ui';
 
 import { AuthLayout } from './components/layout/AuthLayout';
 import { DashboardLayout } from './components/layout/DashboardLayout';
-import { PlanGate } from './components/billing/PlanGate';
 import { VerifyEmailPage } from './pages/auth/VerifyEmail';
+import { VerifyEmailChangePage } from './pages/auth/VerifyEmailChange';
 import { CheckEmailPage } from './pages/auth/CheckEmail';
 import { ChoosePlanPage } from './pages/billing/ChoosePlanPage';
 import { BillingSuccessPage } from './pages/billing/BillingSuccessPage';
@@ -30,14 +30,30 @@ import { CampaignCreatePage } from './pages/campaigns/CampaignCreate';
 import { CampaignDetailPage } from './pages/campaigns/CampaignDetail';
 import { CampaignBuilderPage } from './pages/campaigns/builder/CampaignBuilderPage';
 import { TokenCampaignPreviewPage, OwnerCampaignPreviewPage } from './pages/campaigns/CampaignPreview';
-import { IntegrationListPage } from './pages/integrations/IntegrationList';
 import { HelpCentrePage } from './pages/help/HelpCentrePage';
 import { HelpArticlePage } from './pages/help/HelpArticlePage';
 import { DevelopersPage } from './pages/developers/DevelopersPage';
 import { ChangelogPage } from './pages/changelog/ChangelogPage';
-import { DeliveryLogPage } from './pages/integrations/DeliveryLogPage';
 import { AnalyticsDashboardPage } from './pages/analytics/AnalyticsDashboard';
+import { TemplatesPage } from './pages/templates/TemplatesPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
+import { SettingsLayout } from './pages/settings/SettingsLayout';
+import { SettingsGeneralPage, SettingsTeamPage } from './pages/settings/SettingsWorkspacePages';
+import { SettingsBillingPage } from './pages/settings/workspacePanes';
+import { SettingsIntegrationsPage } from './pages/settings/SettingsIntegrationsPage';
+import { SettingsUsagePage } from './pages/settings/SettingsUsagePage';
+import {
+  SettingsProfilePage,
+  SettingsSecurityPage,
+  SettingsNotificationsPage,
+  SettingsAppearancePage,
+  SettingsDeleteAccountPage,
+} from './pages/settings/SettingsAccountPages';
+import {
+  DeliveryLogRedirect,
+  IntegrationsListRedirect,
+  WorkspaceSettingsRedirect,
+} from './pages/settings/SettingsRedirects';
 import { WorkspaceSettingsPage } from './pages/workspace/WorkspaceSettings';
 import { InviteAcceptPage } from './pages/workspace/InviteAcceptPage';
 
@@ -151,6 +167,7 @@ export default function App() {
       <Route path="/c/:slug" element={<GiveawayPage />} />
       <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/verify-email-change/:token" element={<VerifyEmailChangePage />} />
       <Route path="/403" element={<ForbiddenPage />} />
       <Route path="/500" element={<UnexpectedErrorPage />} />
       <Route
@@ -191,22 +208,35 @@ export default function App() {
       <Route
         element={
           <ProtectedRoute>
-            <PlanGate>
-              <DashboardLayout />
-            </PlanGate>
+            <DashboardLayout />
           </ProtectedRoute>
         }
       >
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/campaigns" element={<CampaignListPage />} />
         <Route path="/campaigns/new" element={<CampaignCreatePage />} />
         <Route path="/campaigns/:id/edit" element={<CampaignBuilderPage />} />
         <Route path="/campaigns/:id" element={<CampaignDetailPage />} />
         <Route path="/analytics" element={<AnalyticsDashboardPage />} />
-        <Route path="/integrations" element={<IntegrationListPage />} />
-        <Route path="/integrations/deliveries" element={<DeliveryLogPage />} />
-        <Route path="/workspace" element={<WorkspaceSettingsPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/integrations" element={<IntegrationsListRedirect />} />
+        <Route path="/integrations/deliveries" element={<DeliveryLogRedirect />} />
+        <Route path="/workspace" element={<WorkspaceSettingsRedirect />} />
+        <Route path="/settings" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="general" replace />} />
+          <Route path="general" element={<SettingsGeneralPage />} />
+          <Route path="team" element={<SettingsTeamPage />} />
+          <Route path="integrations" element={<SettingsIntegrationsPage />} />
+          <Route path="usage" element={<SettingsUsagePage />} />
+          <Route path="billing" element={<SettingsBillingPage />} />
+          <Route path="profile" element={<SettingsProfilePage />} />
+          <Route path="security" element={<SettingsSecurityPage />} />
+          <Route path="notifications" element={<SettingsNotificationsPage />} />
+          <Route path="appearance" element={<SettingsAppearancePage />} />
+          <Route path="account" element={<SettingsDeleteAccountPage />} />
+        </Route>
+        <Route path="/settings-legacy" element={<SettingsPage />} />
+        <Route path="/workspace-legacy" element={<WorkspaceSettingsPage />} />
         <Route path="/choose-plan" element={<ChoosePlanPage />} />
         <Route path="/billing/success" element={<BillingSuccessPage />} />
         <Route path="/check-email" element={<CheckEmailPage />} />

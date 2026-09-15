@@ -11,7 +11,7 @@ import {
   Smartphone,
   Check,
 } from 'lucide-react';
-import { Card, Input, Select } from '../ui';
+import { Card, Input, Select, Checkbox } from '../ui';
 
 interface DisplayModeSettingsProps {
   value: {
@@ -209,21 +209,20 @@ export function DisplayModeSettings({ value, onChange }: DisplayModeSettingsProp
 
       {/* Mobile Settings */}
       <Card className="p-4 border border-zinc-800">
-        <label className="flex items-center justify-between cursor-pointer">
-          <div className="flex items-center gap-3">
+        <Checkbox
+          indicator="end"
+          className="cursor-pointer"
+          isSelected={value.showOnMobile !== false}
+          onChange={(checked) => onChange({ ...value, showOnMobile: checked })}
+        >
+          <span className="flex items-center gap-3">
             <Smartphone className="w-5 h-5 text-zinc-400" />
-            <div>
-              <p className="font-medium">Show on Mobile</p>
-              <p className="text-sm text-zinc-400">Display on phones and tablets</p>
-            </div>
-          </div>
-          <input
-            type="checkbox"
-            checked={value.showOnMobile !== false}
-            onChange={(e) => onChange({ ...value, showOnMobile: e.target.checked })}
-            className="w-5 h-5 rounded border-zinc-700 bg-zinc-900 text-primary-500"
-          />
-        </label>
+            <span>
+              <span className="block font-medium">Show on Mobile</span>
+              <span className="block text-sm text-zinc-400">Display on phones and tablets</span>
+            </span>
+          </span>
+        </Checkbox>
       </Card>
 
       {/* Preview Hint */}

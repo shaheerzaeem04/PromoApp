@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#facc15"/>
+      <stop offset="1" stop-color="#a16207"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".78" cy=".18" r=".7">
+      <stop offset="0" stop-color="#fef9c3" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#fef9c3" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#fff" fill-opacity=".12"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="500" fill="#09090b"/>
+  <rect width="800" height="500" fill="url(#g)"/>
+  <rect width="800" height="500" fill="url(#glow)"/>
+  <rect width="800" height="500" fill="url(#dots)"/>
+  <circle cx="120" cy="400" r="140" fill="#000" fill-opacity=".16"/>
+  
+    <path d="M400 120c70 0 110 54 110 110 0 38-16 58-6 86-18-6-32 6-50 14-10 20-28 30-54 30s-44-10-54-30c-18-8-32-20-50-14 10-28-6-48-6-86 0-56 40-110 110-110z" fill="#fff"/>
+</svg>

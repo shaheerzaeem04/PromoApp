@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".78" cy=".18" r=".7">
+      <stop offset="0" stop-color="#a5f3fc" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#a5f3fc" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#fff" fill-opacity=".12"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="500" fill="#09090b"/>
+  <rect width="800" height="500" fill="url(#g)"/>
+  <rect width="800" height="500" fill="url(#glow)"/>
+  <rect width="800" height="500" fill="url(#dots)"/>
+  <circle cx="120" cy="400" r="140" fill="#000" fill-opacity=".16"/>
+  
+    <path d="M400 120l28 92 96 12-76 62 22 94-70-48-70 48 22-94-76-62 96-12z" fill="#fff" fill-opacity=".2"/>
+    <path d="M370 250c30-90 40-90 70 0l-16 90c-18 12-20 12-38 0z" fill="#fff"/>
+    <path d="M392 340c-18 28-8 48 8 58 16-10 26-30 8-58z" fill="#22d3ee" fill-opacity=".8"/>
+</svg>

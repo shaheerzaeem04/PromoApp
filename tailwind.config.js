@@ -7,6 +7,47 @@ export default {
   theme: {
     extend: {
       colors: {
+        zinc: {
+          50: 'rgb(var(--app-zinc-50) / <alpha-value>)',
+          100: 'rgb(var(--app-zinc-100) / <alpha-value>)',
+          200: 'rgb(var(--app-zinc-200) / <alpha-value>)',
+          300: 'rgb(var(--app-zinc-300) / <alpha-value>)',
+          400: 'rgb(var(--app-zinc-400) / <alpha-value>)',
+          500: 'rgb(var(--app-zinc-500) / <alpha-value>)',
+          600: 'rgb(var(--app-zinc-600) / <alpha-value>)',
+          700: 'rgb(var(--app-zinc-700) / <alpha-value>)',
+          800: 'rgb(var(--app-zinc-800) / <alpha-value>)',
+          900: 'rgb(var(--app-zinc-900) / <alpha-value>)',
+          950: 'rgb(var(--app-zinc-950) / <alpha-value>)',
+        },
+        background: {
+          DEFAULT: 'rgb(var(--app-zinc-950) / <alpha-value>)',
+        },
+        foreground: {
+          DEFAULT: 'rgb(var(--app-zinc-100) / <alpha-value>)',
+        },
+        card: {
+          DEFAULT: 'rgb(var(--app-zinc-900) / <alpha-value>)',
+          foreground: 'rgb(var(--app-zinc-100) / <alpha-value>)',
+        },
+        muted: {
+          DEFAULT: 'rgb(var(--app-zinc-800) / <alpha-value>)',
+          foreground: 'rgb(var(--app-zinc-500) / <alpha-value>)',
+        },
+        border: {
+          DEFAULT: 'rgb(var(--app-zinc-800) / <alpha-value>)',
+          strong: 'rgb(var(--app-zinc-700) / <alpha-value>)',
+        },
+        surface: {
+          DEFAULT: 'rgb(var(--app-zinc-900) / <alpha-value>)',
+          muted: 'rgb(var(--app-zinc-800) / <alpha-value>)',
+        },
+        popover: {
+          DEFAULT: 'rgb(var(--app-zinc-950) / <alpha-value>)',
+        },
+        'on-primary': {
+          DEFAULT: 'rgb(var(--app-on-primary) / <alpha-value>)',
+        },
         primary: {
           50: '#f0fdfa',
           100: '#ccfbf1',

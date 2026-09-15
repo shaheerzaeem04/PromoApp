@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   Plus,
-  Search,
   Gift,
   Users,
   Trophy,
-  MoreVertical,
+  MoreHorizontal,
   Pencil,
   Copy,
   Trash2,
@@ -17,14 +16,24 @@ import {
   Pause,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Badge, Button, Input, FilterSelect, PageSpinner, Modal, PageHeader, EmptyState } from '../../components/ui';
+import {
+  Badge,
+  Button,
+  SearchField,
+  FilterSelect,
+  PageSpinner,
+  Modal,
+  PageHeader,
+  EmptyState,
+  MenuTrigger,
+  Menu,
+  MenuItem,
+  MenuSeparator,
+} from '../../components/ui';
 import type { FilterSelectOption } from '../../components/ui';
 import { billingApi, campaignApi, planLimitMessage } from '../../services/api';
 import { formatNumber, formatDate } from '../../utils/formatters';
 import { cn } from '../../utils/cn';
-
-const menuItemClass =
-  'w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-left transition-colors text-zinc-300 hover:bg-primary-500/15 hover:text-zinc-50';
 
 const statusColors: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'default'> = {
   ACTIVE: 'success',
@@ -48,30 +57,72 @@ function campaignMatchesQuery(campaign: { title?: string; slug?: string }, query
   return haystack.includes(query);
 }
 
+function CampaignActionsMenu({
+  campaign,
+  onDuplicate,
+  onPause,
+  onActivate,
+  onDelete,
+}: {
+  campaign: { id: string; status: string; slug: string };
+  onDuplicate: () => void;
+  onPause: () => void;
+  onActivate: () => void;
+  onDelete: () => void;
+}) {
+  const navigate = useNavigate();
+  const editPath = campaign.status === 'DRAFT' ? `/campaigns/${campaign.id}/edit` : `/campaigns/${campaign.id}`;
+
+  return (
+    <MenuTrigger>
+      <Button aria-label="Campaign actions" variant="secondary" className="h-10 w-10 px-0" data-testid="campaign-menu">
+        <MoreHorizontal className="w-5 h-5" />
+      </Button>
+      <Menu aria-label="Campaign actions">
+        <MenuItem textValue={campaign.status === 'DRAFT' ? 'Edit draft' : 'Edit'} onAction={() => navigate(editPath)}>
+          <Pencil className="w-4 h-4 text-primary-400 shrink-0" />
+          {campaign.status === 'DRAFT' ? 'Edit draft' : 'Edit'}
+        </MenuItem>
+        <MenuItem textValue="Open builder" onAction={() => navigate(`/campaigns/${campaign.id}/edit`)}>
+          <Pencil className="w-4 h-4 text-primary-400 shrink-0" />
+          Open builder
+        </MenuItem>
+        <MenuItem textValue="Duplicate" data-testid="campaign-duplicate" onAction={onDuplicate}>
+          <Copy className="w-4 h-4 text-primary-400 shrink-0" />
+          Duplicate
+        </MenuItem>
+        <MenuItem textValue="Public page" href={`/c/${campaign.slug}`} target="_blank" rel="noreferrer">
+          <ExternalLink className="w-4 h-4 text-primary-400 shrink-0" />
+          Public page
+        </MenuItem>
+        <MenuSeparator />
+        {campaign.status === 'ACTIVE' ? (
+          <MenuItem textValue="Pause" data-testid="campaign-pause" className="text-amber-400" onAction={onPause}>
+            <Pause className="w-4 h-4 shrink-0" />
+            Pause
+          </MenuItem>
+        ) : campaign.status !== 'ENDED' ? (
+          <MenuItem textValue="Activate" data-testid="campaign-activate" className="text-emerald-400" onAction={onActivate}>
+            <Play className="w-4 h-4 shrink-0" />
+            Activate
+          </MenuItem>
+        ) : null}
+        <MenuItem textValue="Delete" data-testid="campaign-delete" className="text-red-400" onAction={onDelete}>
+          <Trash2 className="w-4 h-4 shrink-0" />
+          Delete
+        </MenuItem>
+      </Menu>
+    </MenuTrigger>
+  );
+}
+
 export function CampaignListPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(null);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenuOpen(null);
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [menuOpen]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['campaigns', status],
@@ -122,10 +173,6 @@ export function CampaignListPage() {
   );
   const filtersActive = Boolean(query || status);
 
-  useEffect(() => {
-    setMenuOpen(null);
-  }, [query, status]);
-
   if (isLoading) return <PageSpinner />;
 
   return (
@@ -134,25 +181,27 @@ export function CampaignListPage() {
         title="Campaigns"
         description="Create, publish, and manage giveaways."
         actions={
-          <Link to={billing.data?.needsPlan ? '/choose-plan' : '/campaigns/new'}>
-            <Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onPress={() => navigate('/templates')}>
+              Browse templates
+            </Button>
+            <Button onPress={() => navigate(billing.data?.needsPlan ? '/choose-plan' : '/campaigns/new')}>
               <Plus className="w-4 h-4" />
               {billing.data?.needsPlan ? 'Start 7-day trial' : 'New campaign'}
             </Button>
-          </Link>
+          </div>
         }
       />
 
       <div className="flex flex-col md:flex-row gap-3">
-        <div className="flex-1">
-          <Input
-            placeholder="Search campaigns..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            icon={<Search className="w-4 h-4" />}
-            data-testid="campaign-search"
-          />
-        </div>
+        <SearchField
+          className="flex-1"
+          aria-label="Search campaigns"
+          placeholder="Search campaigns..."
+          value={search}
+          onChange={setSearch}
+          data-testid="campaign-search"
+        />
         <FilterSelect
           className="md:w-52"
           options={statusOptions}
@@ -178,10 +227,7 @@ export function CampaignListPage() {
                 delay: reduceMotion ? 0 : Math.min(index * 0.025, 0.16),
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className={cn(
-                'campaign-row flex items-start gap-4 py-2 -mx-2 px-3',
-                menuOpen === campaign.id && 'is-open'
-              )}
+              className={cn('campaign-row flex items-start gap-4 py-2 -mx-2 px-3')}
             >
               <Link to={`/campaigns/${campaign.id}`} className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -202,128 +248,14 @@ export function CampaignListPage() {
                   )}
                 </div>
               </Link>
-              <div
-                ref={menuOpen === campaign.id ? menuRef : undefined}
-                className={cn('relative shrink-0', menuOpen === campaign.id && 'z-20')}
-              >
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen(menuOpen === campaign.id ? null : campaign.id)}
-                  className={cn(
-                    'inline-flex items-center justify-center h-10 w-10 rounded-xl border box-border transition-all duration-150',
-                    'focus:outline-none focus:ring-2 focus:ring-primary-500/40 focus:ring-offset-0',
-                    menuOpen === campaign.id
-                      ? 'text-zinc-50 border-primary-500/70 bg-zinc-900/70 ring-2 ring-primary-500/25'
-                      : 'text-zinc-400 border-transparent hover:text-zinc-100 hover:bg-zinc-800/80 hover:border-primary-500/25'
-                  )}
-                  data-testid="campaign-menu"
-                  aria-label="Campaign actions"
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen === campaign.id}
-                >
-                  <MoreVertical className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
-                </button>
-                {menuOpen === campaign.id && (
-                  <div
-                    role="menu"
-                    className={cn(
-                      'absolute right-0 top-full mt-2 w-52 overflow-hidden z-50',
-                      'rounded-xl border border-primary-500/35',
-                      'bg-zinc-950/80 backdrop-blur-xl',
-                      'shadow-2xl shadow-primary-500/10 ring-1 ring-primary-500/15'
-                    )}
-                  >
-                    <div className="p-1.5 space-y-0.5">
-                      <Link
-                        role="menuitem"
-                        to={campaign.status === 'DRAFT' ? `/campaigns/${campaign.id}/edit` : `/campaigns/${campaign.id}`}
-                        className={menuItemClass}
-                        onClick={() => setMenuOpen(null)}
-                      >
-                        <Pencil className="w-4 h-4 text-primary-400 shrink-0" />
-                        {campaign.status === 'DRAFT' ? 'Edit draft' : 'Edit'}
-                      </Link>
-                      <Link
-                        role="menuitem"
-                        to={`/campaigns/${campaign.id}/edit`}
-                        className={menuItemClass}
-                        onClick={() => setMenuOpen(null)}
-                      >
-                        <Pencil className="w-4 h-4 text-primary-400 shrink-0" />
-                        Open builder
-                      </Link>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          duplicateMutation.mutate(campaign.id);
-                          setMenuOpen(null);
-                        }}
-                        className={menuItemClass}
-                        data-testid="campaign-duplicate"
-                      >
-                        <Copy className="w-4 h-4 text-primary-400 shrink-0" />
-                        Duplicate
-                      </button>
-                      <a
-                        role="menuitem"
-                        href={`/c/${campaign.slug}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={menuItemClass}
-                        onClick={() => setMenuOpen(null)}
-                      >
-                        <ExternalLink className="w-4 h-4 text-primary-400 shrink-0" />
-                        Public page
-                      </a>
-
-                      <div className="my-1 h-px bg-primary-500/20" />
-
-                      {campaign.status === 'ACTIVE' ? (
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => {
-                            statusMutation.mutate({ id: campaign.id, status: 'PAUSED' });
-                            setMenuOpen(null);
-                          }}
-                          className={cn(menuItemClass, 'text-amber-400 hover:text-amber-300')}
-                          data-testid="campaign-pause"
-                        >
-                          <Pause className="w-4 h-4 shrink-0" />
-                          Pause
-                        </button>
-                      ) : campaign.status !== 'ENDED' && (
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => {
-                            statusMutation.mutate({ id: campaign.id, status: 'ACTIVE' });
-                            setMenuOpen(null);
-                          }}
-                          className={cn(menuItemClass, 'text-emerald-400 hover:text-emerald-300')}
-                          data-testid="campaign-activate"
-                        >
-                          <Play className="w-4 h-4 shrink-0" />
-                          Activate
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setDeleteModal(campaign.id);
-                          setMenuOpen(null);
-                        }}
-                        className={cn(menuItemClass, 'text-red-400 hover:text-red-300')}
-                        data-testid="campaign-delete"
-                      >
-                        <Trash2 className="w-4 h-4 shrink-0" />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                )}
+              <div className="relative shrink-0">
+                <CampaignActionsMenu
+                  campaign={campaign}
+                  onDuplicate={() => duplicateMutation.mutate(campaign.id)}
+                  onPause={() => statusMutation.mutate({ id: campaign.id, status: 'PAUSED' })}
+                  onActivate={() => statusMutation.mutate({ id: campaign.id, status: 'ACTIVE' })}
+                  onDelete={() => setDeleteModal(campaign.id)}
+                />
               </div>
             </motion.div>
             ))}
@@ -336,12 +268,10 @@ export function CampaignListPage() {
           title={filtersActive ? 'No campaigns match' : 'No campaigns found'}
           description={filtersActive ? 'Clear search or status to see the rest of the list.' : 'Create a giveaway from scratch or a template. You can save a draft before publishing.'}
           action={!filtersActive ? (
-            <Link to={billing.data?.needsPlan ? '/choose-plan' : '/campaigns/new'}>
-              <Button>
-                <Plus className="w-4 h-4" />
-                {billing.data?.needsPlan ? 'Start 7-day trial' : 'Create campaign'}
-              </Button>
-            </Link>
+            <Button onPress={() => navigate(billing.data?.needsPlan ? '/choose-plan' : '/campaigns/new')}>
+              <Plus className="w-4 h-4" />
+              {billing.data?.needsPlan ? 'Start 7-day trial' : 'Create campaign'}
+            </Button>
           ) : undefined}
         />
       )}

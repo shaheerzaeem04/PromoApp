@@ -317,7 +317,7 @@ export function EmbedTab({
                     {row.enabled ? 'Disable' : 'Enable'}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => integrationsApi.testEvent(row.integrationId).then(() => toast.success('Test sent'))}>Test</Button>
-                  <Link to={`/integrations/deliveries?campaignId=${campaignId}`} className="text-xs text-primary-400 px-2 py-1">Deliveries</Link>
+                  <Link to={`/settings/integrations?tab=logs&campaignId=${campaignId}`} className="text-xs text-primary-400 px-2 py-1">Deliveries</Link>
                   <Button size="sm" variant="ghost" onClick={() => publishingApi.removeAssignment(campaignId, row.id).then(() => queryClient.invalidateQueries({ queryKey: ['campaign-integrations', campaignId] }))}>
                     Remove
                   </Button>

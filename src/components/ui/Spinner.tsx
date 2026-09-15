@@ -35,7 +35,7 @@ export function PageSpinner() {
 export function RouteSpinner({ label = 'Loading' }: { label?: string }) {
   return (
     <div
-      className="fixed inset-0 z-[200] bg-zinc-950 flex items-center justify-center"
+      className="fixed inset-0 z-[200] bg-background flex items-center justify-center"
       data-testid="route-loading"
       aria-busy="true"
       aria-label={label}

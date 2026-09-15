@@ -765,7 +765,7 @@ export function EntryActionBuilder({ actions, onChange, allowedActionTypes }: En
 
       {/* Action Templates */}
       {actions.length === 0 && (
-        <Card className="p-8 border-dashed border-2 border-primary-500/25 bg-zinc-950/40">
+        <Card className="p-8 border-dashed border-2 border-primary-500/25">
           <div className="text-center">
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
@@ -917,7 +917,7 @@ export function EntryActionBuilder({ actions, onChange, allowedActionTypes }: En
               animate={{ opacity: 1, y: 0 }}
               exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="space-y-4 rounded-xl border border-primary-500/20 bg-zinc-950/40 p-4"
+              className="space-y-4 rounded-xl border border-primary-500/20 bg-zinc-900 p-4"
             >
               <Input
                 label="Title"

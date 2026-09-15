@@ -14,7 +14,7 @@ import {
   Maximize2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, Card, DateTimePicker, Input, Modal, PageSpinner } from '../../../components/ui';
+import { Button, Card, DateTimePicker, Input, Modal, PageSpinner, Checkbox } from '../../../components/ui';
 import {
   TemplateGallery,
   ThemeSelector,
@@ -296,15 +296,23 @@ export function CampaignBuilderPage() {
   }, [state, saveDraft]);
 
   const applyTemplate = (template: any) => {
-    if (template.id === 'blank') {
+    if (template.id === 'blank' || template.isBlank || template.slug === 'blank') {
       patch({ templateId: 'blank', step: 1 });
       return;
     }
+    if (template.comingSoon) {
+      toast('This template is coming soon');
+      return;
+    }
     const config = template.config || {};
+    const now = new Date();
+    const end = new Date(now.getTime() + (Number(config.durationDays) || 30) * 86400000);
     patch({
       templateId: template.id,
-      title: state.title || template.name || '',
+      title: state.title?.trim() ? state.title : config.title || template.name || '',
       description: config.description || state.description,
+      startDate: now.toISOString().slice(0, 16),
+      endDate: end.toISOString().slice(0, 16),
       enableReferrals: config.enableReferrals ?? state.enableReferrals,
       referralBonusPoints: config.referralBonusPoints ?? state.referralBonusPoints,
       enableSpinWheel: Boolean(config.enableSpinWheel),
@@ -312,8 +320,17 @@ export function CampaignBuilderPage() {
       displayMode: config.displayMode || 'INLINE',
       popupTrigger: config.popupTrigger,
       popupDelay: config.popupDelay,
+      requireEmail: config.requireEmail !== false,
+      requireName: config.requireName !== false,
+      requirePhone: Boolean(config.requirePhone),
+      showLeaderboard: config.showLeaderboard !== false,
+      requireLegalAcceptance: Boolean(config.requireLegalAcceptance),
+      termsConditions: config.termsConditions || state.termsConditions,
+      featuredImage: config.featuredImage || state.featuredImage,
+      backgroundImageUrl: config.backgroundImageUrl || state.backgroundImageUrl,
+      logoUrl: config.logoUrl || state.logoUrl,
       theme: { ...state.theme, ...(config.theme || {}) },
-      fontFamily: config.theme?.fontFamily || config.theme?.headingFont || state.fontFamily,
+      fontFamily: config.theme?.fontFamily || config.fontFamily || config.theme?.headingFont || state.fontFamily,
       actions: (config.entryActions || []).map((action: any, index: number) => ({
         id: `tpl-${index}-${Date.now()}`,
         type: action.type,
@@ -332,6 +349,17 @@ export function CampaignBuilderPage() {
         type: prize.type || 'PHYSICAL',
         value: prize.value,
         image: prize.image || '',
+      })),
+      formFields: (config.customFormFields || []).map((field: any, index: number) => ({
+        id: `tpl-field-${index}-${Date.now()}`,
+        fieldType: field.fieldType || 'TEXT',
+        label: field.label || 'Field',
+        placeholder: field.placeholder || '',
+        helpText: field.helpText || '',
+        required: Boolean(field.required),
+        options: field.options || [],
+        order: index,
+        enabled: true,
       })),
       step: 1,
     });
@@ -636,22 +664,29 @@ export function CampaignBuilderPage() {
                 ['enableCaptcha', 'Enable CAPTCHA'],
                 ['restrictByLocation', 'Restrict by country'],
               ].map(([key, label]) => (
-                <label key={key} className="flex items-center gap-2">
-                  <input type="checkbox" checked={(state as any)[key]} onChange={(e) => patch({ [key]: e.target.checked } as any)} />
+                <Checkbox
+                  key={key}
+                  isSelected={Boolean((state as any)[key])}
+                  onChange={(checked) => patch({ [key]: checked } as any)}
+                >
                   {label}
-                </label>
+                </Checkbox>
               ))}
               <Input label="Allowed countries (comma-separated ISO codes)" value={state.allowedCountries} onChange={(e) => patch({ allowedCountries: e.target.value })} />
               <Input label="Max entries per user (optional)" type="number" min={1} value={state.maxEntriesPerUser} onChange={(e) => patch({ maxEntriesPerUser: e.target.value })} />
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={state.businessEmailOnly} onChange={(e) => patch({ businessEmailOnly: e.target.checked })} />
+              <Checkbox
+                isSelected={state.businessEmailOnly}
+                onChange={(checked) => patch({ businessEmailOnly: checked })}
+              >
                 Business email only (reject common free inbox providers)
-              </label>
+              </Checkbox>
               <p className="text-xs text-zinc-500">This is not a company-identity check. It only blocks well-known consumer email domains.</p>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" checked={state.allowPrefill} onChange={(e) => patch({ allowPrefill: e.target.checked })} />
+              <Checkbox
+                isSelected={state.allowPrefill}
+                onChange={(checked) => patch({ allowPrefill: checked })}
+              >
                 Allow URL prefill (?email=, ?name=, custom field keys)
-              </label>
+              </Checkbox>
               <p className="text-xs text-zinc-500">Prefill never auto-submits and does not replace an existing participant session.</p>
             </div>
           )}
@@ -674,30 +709,31 @@ export function CampaignBuilderPage() {
 
           {step.id === 'referrals' && (
             <div className="space-y-4 max-w-xl">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={state.enableReferrals} onChange={(e) => patch({ enableReferrals: e.target.checked })} />
+              <Checkbox
+                isSelected={state.enableReferrals}
+                onChange={(checked) => patch({ enableReferrals: checked })}
+              >
                 Enable referrals
-              </label>
+              </Checkbox>
               <Input label="Referral bonus points" type="number" min={0} value={state.referralBonusPoints} onChange={(e) => patch({ referralBonusPoints: parseInt(e.target.value) || 0 })} />
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={state.showLeaderboard} onChange={(e) => patch({ showLeaderboard: e.target.checked })} />
+              <Checkbox
+                isSelected={state.showLeaderboard}
+                onChange={(checked) => patch({ showLeaderboard: checked })}
+              >
                 Show public leaderboard
-              </label>
+              </Checkbox>
               <p className="text-sm text-zinc-500">Existing campaigns keep the leaderboard visible unless you turn this off.</p>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={state.enableSpinWheel}
-                  onChange={(e) => {
-                    const enabled = e.target.checked;
-                    patch({ enableSpinWheel: enabled });
-                    if (enabled && state.campaignId) {
-                      spinWheelApi.createDefaultSegments(state.campaignId).catch(() => undefined);
-                    }
-                  }}
-                />
+              <Checkbox
+                isSelected={state.enableSpinWheel}
+                onChange={(checked) => {
+                  patch({ enableSpinWheel: checked });
+                  if (checked && state.campaignId) {
+                    spinWheelApi.createDefaultSegments(state.campaignId).catch(() => undefined);
+                  }
+                }}
+              >
                 Enable spin wheel
-              </label>
+              </Checkbox>
               {state.enableSpinWheel && (
                 <div className="space-y-3">
                   <Input label="Spins per day" type="number" min={1} value={state.spinsPerDay} onChange={(e) => patch({ spinsPerDay: parseInt(e.target.value) || 1 })} />
@@ -710,10 +746,12 @@ export function CampaignBuilderPage() {
           {step.id === 'legal' && (
             <div className="space-y-4">
               <p className="text-sm text-zinc-400">This uses a rules template generator, not an AI model. Review with legal counsel before publishing.</p>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={state.requireLegalAcceptance} onChange={(e) => patch({ requireLegalAcceptance: e.target.checked })} />
+              <Checkbox
+                isSelected={state.requireLegalAcceptance}
+                onChange={(checked) => patch({ requireLegalAcceptance: checked })}
+              >
                 Require participants to accept legal documents before entering
-              </label>
+              </Checkbox>
               <RulesGenerator campaignId={state.campaignId} onRulesGenerated={(rules) => patch({ officialRules: rules })} />
               <label className="block text-sm text-zinc-400" htmlFor="official-rules">Official rules</label>
               <textarea id="official-rules" className="input min-h-[160px] py-2" value={state.officialRules} onChange={(e) => patch({ officialRules: e.target.value })} />
@@ -788,7 +826,7 @@ export function CampaignBuilderPage() {
             </div>
           )}
 
-          <div className="flex justify-between pt-4 sticky bottom-0 bg-zinc-950/95 py-3 lg:static">
+          <div className="flex justify-between pt-4 sticky bottom-0 bg-background py-3 lg:static">
             <Button type="button" variant="secondary" disabled={state.step === 0} onClick={() => patch({ step: state.step - 1, stepId: BUILDER_STEPS[state.step - 1]?.id })}>
               <ArrowLeft className="w-4 h-4" /> Back
             </Button>

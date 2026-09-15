@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, Input } from '../../components/ui';
+import { Button, Form, TextField } from '../../components/ui';
 import { authApi } from '../../services/api';
 
 interface ResetPasswordForm {
@@ -19,12 +19,9 @@ export function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<ResetPasswordForm>();
+  const { control, handleSubmit, watch } = useForm<ResetPasswordForm>({
+    defaultValues: { password: '', confirmPassword: '' },
+  });
 
   const password = watch('password');
 
@@ -73,44 +70,75 @@ export function ResetPasswordPage() {
         <p className="text-zinc-400 mt-2">Choose a strong password with at least 8 characters.</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="relative">
-          <Input
-            label="New password"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="••••••••"
-            icon={<Lock className="w-5 h-5" />}
-            error={errors.password?.message}
-            {...register('password', {
-              required: 'Password is required',
-              minLength: { value: 8, message: 'Password must be at least 8 characters' },
-            })}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-[38px] text-zinc-500 hover:text-zinc-300"
-          >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </button>
-        </div>
+      <Form onSubmit={handleSubmit(onSubmit)} validationBehavior="aria">
+        <Controller
+          control={control}
+          name="password"
+          rules={{
+            required: 'Password is required',
+            minLength: { value: 8, message: 'Password must be at least 8 characters' },
+          }}
+          render={({ field, fieldState }) => (
+            <TextField
+              label="New password"
+              name={field.name}
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              autoComplete="new-password"
+              icon={<Lock className="w-5 h-5" />}
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              inputRef={field.ref}
+              isRequired
+              validationBehavior="aria"
+              isInvalid={fieldState.invalid}
+              errorMessage={fieldState.error?.message}
+              suffix={
+                <Button
+                  variant="icon"
+                  size="sm"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  onPress={() => setShowPassword((open) => !open)}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </Button>
+              }
+            />
+          )}
+        />
 
-        <Input
-          label="Confirm password"
-          type="password"
-          placeholder="••••••••"
-          icon={<Lock className="w-5 h-5" />}
-          error={errors.confirmPassword?.message}
-          {...register('confirmPassword', {
+        <Controller
+          control={control}
+          name="confirmPassword"
+          rules={{
             required: 'Please confirm your password',
             validate: (value) => value === password || 'Passwords do not match',
-          })}
+          }}
+          render={({ field, fieldState }) => (
+            <TextField
+              label="Confirm password"
+              name={field.name}
+              type="password"
+              placeholder="••••••••"
+              autoComplete="new-password"
+              icon={<Lock className="w-5 h-5" />}
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              inputRef={field.ref}
+              isRequired
+              validationBehavior="aria"
+              isInvalid={fieldState.invalid}
+              errorMessage={fieldState.error?.message}
+            />
+          )}
         />
 
         <Button type="submit" className="w-full" loading={loading}>
           Update password
         </Button>
-      </form>
+      </Form>
 
       <p className="text-center text-zinc-400 mt-8">
         <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium">

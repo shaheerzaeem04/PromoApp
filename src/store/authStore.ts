@@ -8,6 +8,7 @@ interface User {
   role: string;
   avatar: string | null;
   emailVerified?: boolean;
+  pendingEmail?: string | null;
 }
 
 interface AuthState {

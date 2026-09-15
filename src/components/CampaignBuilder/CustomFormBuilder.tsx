@@ -1,4 +1,4 @@
-import { Input } from '../ui';
+import { Button, Checkbox, TextField, Textarea } from '../ui';
 
 const FIELD_TYPES = [
   { value: 'TEXT', label: 'Text' },
@@ -75,14 +75,14 @@ export function CustomFormBuilder({ fields, onChange }: CustomFormBuilderProps) 
       </div>
       <div className="flex flex-wrap gap-2">
         {FIELD_TYPES.map((type) => (
-          <button
+          <Button
             key={type.value}
-            type="button"
-            onClick={() => addField(type.value)}
-            className="px-3 py-1.5 text-sm rounded-lg bg-zinc-800 hover:bg-zinc-700"
+            variant="secondary"
+            size="sm"
+            onPress={() => addField(type.value)}
           >
             + {type.label}
-          </button>
+          </Button>
         ))}
       </div>
       {fields.length === 0 && (
@@ -94,37 +94,54 @@ export function CustomFormBuilder({ fields, onChange }: CustomFormBuilderProps) 
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs uppercase tracking-wide text-zinc-500">{field.fieldType}</p>
               <div className="flex gap-1">
-                <button type="button" className="px-2 py-1 text-xs bg-zinc-800 rounded" onClick={() => move(index, -1)}>Up</button>
-                <button type="button" className="px-2 py-1 text-xs bg-zinc-800 rounded" onClick={() => move(index, 1)}>Down</button>
-                <button
-                  type="button"
-                  className="px-2 py-1 text-xs bg-red-500/10 text-red-400 rounded"
-                  onClick={() => onChange(fields.filter((item) => item.id !== field.id).map((item, order) => ({ ...item, order })))}
+                <Button variant="secondary" size="sm" onPress={() => move(index, -1)}>
+                  Up
+                </Button>
+                <Button variant="secondary" size="sm" onPress={() => move(index, 1)}>
+                  Down
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onPress={() => onChange(fields.filter((item) => item.id !== field.id).map((item, order) => ({ ...item, order })))}
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             </div>
-            <Input label="Label" value={field.label} onChange={(e) => updateField(field.id, { label: e.target.value })} />
-            <Input label="Placeholder" value={field.placeholder || ''} onChange={(e) => updateField(field.id, { placeholder: e.target.value })} />
-            <Input label="Help text" value={field.helpText || ''} onChange={(e) => updateField(field.id, { helpText: e.target.value })} />
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={field.required}
-                onChange={(e) => updateField(field.id, { required: e.target.checked })}
-              />
+            <TextField label="Label" name="label" value={field.label} onChange={(label) => updateField(field.id, { label })} />
+            <TextField
+              label="Placeholder"
+              name="placeholder"
+              value={field.placeholder || ''}
+              onChange={(placeholder) => updateField(field.id, { placeholder })}
+            />
+            <TextField
+              label="Help text"
+              name="helpText"
+              value={field.helpText || ''}
+              onChange={(helpText) => updateField(field.id, { helpText })}
+            />
+            <Checkbox
+              isSelected={field.required}
+              onChange={(checked) => updateField(field.id, { required: checked })}
+            >
               Required
-            </label>
+            </Checkbox>
             {OPTION_TYPES.has(field.fieldType) && (
-              <label className="block text-sm text-zinc-400">
-                Options (one per line)
-                <textarea
-                  className="input min-h-[80px] mt-1"
-                  value={(field.options || []).join('\n')}
-                  onChange={(e) => updateField(field.id, { options: e.target.value.split('\n').map((item) => item.trim()).filter(Boolean) })}
-                />
-              </label>
+              <Textarea
+                label="Options (one per line)"
+                className="min-h-[80px]"
+                value={(field.options || []).join('\n')}
+                onChange={(e) =>
+                  updateField(field.id, {
+                    options: e.target.value
+                      .split('\n')
+                      .map((item) => item.trim())
+                      .filter(Boolean),
+                  })
+                }
+              />
             )}
           </div>
         ))}

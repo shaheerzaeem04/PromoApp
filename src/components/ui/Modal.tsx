@@ -39,7 +39,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             onClick={onClose}
-            className="fixed inset-0 z-[100] bg-zinc-950/85 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] bg-background/85 backdrop-blur-sm"
           />
           <motion.div
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
@@ -63,7 +63,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
                 aria-labelledby={title ? 'modal-title' : undefined}
                 className={cn(
                   'w-full h-full max-h-[88vh] flex flex-col overflow-hidden',
-                  'bg-zinc-950 rounded-t-2xl sm:rounded-xl',
+                  'bg-card rounded-t-2xl sm:rounded-xl',
                   'border border-primary-500/40'
                 )}
                 onClick={(e) => e.stopPropagation()}
@@ -72,6 +72,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
                   <div className="flex items-center justify-between px-5 py-4 border-b border-primary-500/20 shrink-0">
                     <h2 id="modal-title" className="text-base font-semibold text-zinc-50">{title}</h2>
                     <button
+                      type="button"
                       onClick={onClose}
                       aria-label="Close dialog"
                       className="inline-flex items-center justify-center h-10 w-10 text-zinc-400 hover:text-zinc-100 hover:bg-primary-500/10 border border-transparent hover:border-primary-500/25 rounded-xl transition-colors"

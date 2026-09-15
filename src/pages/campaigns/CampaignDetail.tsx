@@ -84,11 +84,14 @@ export function CampaignDetailPage() {
             <LayoutTemplate className="w-4 h-4" />
             Open Builder
           </Button>
-          <a href={`/c/${data.slug}`} target="_blank" rel="noreferrer">
-            <Button variant="secondary">
-              <ExternalLink className="w-4 h-4" />
-              View Live
-            </Button>
+          <a
+            href={`/c/${data.slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn btn-secondary h-10 px-4 text-sm inline-flex items-center gap-2"
+          >
+            <ExternalLink className="w-4 h-4" />
+            View Live
           </a>
           {data.status === 'ACTIVE' ? (
             <Button variant="secondary" onClick={() => statusMutation.mutate('PAUSED')} loading={statusMutation.isPending}>

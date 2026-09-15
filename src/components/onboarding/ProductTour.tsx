@@ -8,8 +8,8 @@ const STEPS = [
   { id: 'dashboard', href: '/dashboard', title: 'Dashboard', body: 'Campaign stats and your onboarding checklist live here.' },
   { id: 'campaigns', href: '/campaigns', title: 'Campaigns', body: 'Create, edit, and publish giveaways from the builder.' },
   { id: 'analytics', href: '/analytics', title: 'Analytics', body: 'Workspace-level performance, separate from participant campaign analytics.' },
-  { id: 'integrations', href: '/integrations', title: 'Integrations', body: 'Connect ESPs, Google Sheets, and Zapier Catch Hooks.' },
-  { id: 'workspace', href: '/workspace', title: 'Workspace', body: 'Team, billing, and API keys for this workspace.' },
+  { id: 'integrations', href: '/settings/integrations', title: 'Integrations', body: 'Connect ESPs, Google Sheets, and Zapier Catch Hooks.' },
+  { id: 'workspace', href: '/settings/general', title: 'Workspace', body: 'Team, billing, and API keys for this workspace.' },
 ];
 
 export function ProductTour() {

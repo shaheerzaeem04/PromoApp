@@ -33,7 +33,7 @@ export function TrialBanner() {
         {plan} Trial{typeof days === 'number' ? ` · ${days} day${days === 1 ? '' : 's'} remaining` : ''}
         <span className="text-primary-200/80"> · {formatRenewal(billing.data)}</span>
       </span>
-      <Link to="/workspace?tab=billing" className="underline" data-testid="trial-banner-manage">Manage Billing</Link>
+      <Link to="/settings/billing" className="underline" data-testid="trial-banner-manage">Manage Billing</Link>
     </div>
   );
 }

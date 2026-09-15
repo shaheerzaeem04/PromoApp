@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search } from 'lucide-react';
-import { Card, Button, Input, Badge, Modal, PageSpinner, EmptyState } from '../../../components/ui';
+import { Card, Button, SearchField, Badge, Modal, PageSpinner, EmptyState } from '../../../components/ui';
 import { entryApi } from '../../../services/api';
 import { formatDateTime, formatNumber } from '../../../utils/formatters';
 import { verificationLabel } from './constants';
@@ -34,24 +33,27 @@ export function ParticipantsTab({ campaignId }: { campaignId: string }) {
 
   return (
     <div className="space-y-4">
-      <form
-        className="flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setPage(1);
-          setAppliedSearch(search.trim());
-        }}
-      >
-        <div className="flex-1">
-          <Input
-            placeholder="Search name or email"
-            icon={<Search className="w-4 h-4" />}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <Button type="submit">Search</Button>
-      </form>
+      <div className="flex gap-2">
+        <SearchField
+          className="flex-1"
+          aria-label="Search name or email"
+          placeholder="Search name or email"
+          value={search}
+          onChange={setSearch}
+          onSubmit={(value) => {
+            setPage(1);
+            setAppliedSearch(value.trim());
+          }}
+        />
+        <Button
+          onPress={() => {
+            setPage(1);
+            setAppliedSearch(search.trim());
+          }}
+        >
+          Search
+        </Button>
+      </div>
 
       {isLoading && <PageSpinner />}
       {isError && <Card className="p-8 text-center text-zinc-400">Could not load participants.</Card>}

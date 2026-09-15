@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d946ef"/>
+      <stop offset="1" stop-color="#6b21a8"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".78" cy=".18" r=".7">
+      <stop offset="0" stop-color="#f5d0fe" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#f5d0fe" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#fff" fill-opacity=".12"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="500" fill="#09090b"/>
+  <rect width="800" height="500" fill="url(#g)"/>
+  <rect width="800" height="500" fill="url(#glow)"/>
+  <rect width="800" height="500" fill="url(#dots)"/>
+  <circle cx="120" cy="400" r="140" fill="#000" fill-opacity=".16"/>
+  
+    <rect x="250" y="150" width="210" height="160" rx="16" transform="rotate(-8 355 230)" fill="#fff"/>
+    <rect x="340" y="170" width="210" height="160" rx="16" transform="rotate(7 445 250)" fill="#f5d0fe"/>
+    <circle cx="430" cy="236" r="28" fill="none" stroke="#a21caf" stroke-width="8"/>
+    <rect x="470" y="196" width="22" height="14" rx="4" fill="#a21caf"/>
+</svg>

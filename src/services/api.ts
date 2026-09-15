@@ -47,6 +47,9 @@ api.interceptors.request.use(
     if (activeWorkspaceId) {
       config.headers['X-Workspace-ID'] = activeWorkspaceId;
     }
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -62,6 +65,7 @@ api.interceptors.response.use(
       requestUrl.includes('/auth/login') ||
       requestUrl.includes('/auth/register') ||
       requestUrl.includes('/auth/verify-email') ||
+      requestUrl.includes('/auth/verify-email-change') ||
       requestUrl.includes('/auth/resend-verification') ||
       requestUrl.includes('/auth/forgot-password') ||
       requestUrl.includes('/auth/reset-password');
@@ -117,10 +121,21 @@ export const authApi = {
     api.post('/auth/logout', { refreshToken }),
   getProfile: () =>
     api.get('/auth/profile'),
-  updateProfile: (data: { name?: string; avatar?: string }) =>
+  updateProfile: (data: { name?: string }) =>
     api.patch('/auth/profile', data),
+  uploadAvatar: (file: File) => {
+    const body = new FormData();
+    body.append('file', file);
+    return api.post('/auth/profile/avatar', body);
+  },
+  removeAvatar: () => api.delete('/auth/profile/avatar'),
+  getAvatarBlob: () => api.get('/auth/profile/avatar', { responseType: 'blob' }),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.post('/auth/change-password', data),
+  requestEmailChange: (data: { newEmail: string; currentPassword: string }) =>
+    api.post('/auth/change-email', data),
+  verifyEmailChange: (token: string) =>
+    api.post('/auth/verify-email-change', { token }),
   forgotPassword: (email: string) =>
     api.post('/auth/forgot-password', { email }),
   resetPassword: (data: { token: string; newPassword: string }) =>
@@ -129,8 +144,8 @@ export const authApi = {
     api.post('/auth/verify-email', { token, redirect }),
   resendVerification: (email: string) =>
     api.post('/auth/resend-verification', { email }),
-  deleteAccount: (email: string) =>
-    api.delete('/auth/account', { data: { email } }),
+  deleteAccount: (email: string, password: string) =>
+    api.delete('/auth/account', { data: { email, password } }),
 };
 
 // Campaign API
@@ -402,6 +417,10 @@ export const templateApi = {
     api.get('/templates'),
   getById: (id: string) =>
     api.get(`/templates/${id}`),
+  preview: (idOrSlug: string) =>
+    api.get(`/templates/${idOrSlug}/preview`),
+  use: (idOrSlug: string, data?: { timezone?: string }) =>
+    api.post(`/templates/${idOrSlug}/use`, data || {}),
   create: (data: { name: string; description?: string; category: string; config: any }) =>
     api.post('/templates', data),
   createFromCampaign: (campaignId: string, name: string) =>
@@ -464,10 +483,22 @@ export const workspaceApi = {
   list: () => api.get('/workspaces'),
   create: (name: string) => api.post('/workspaces', { name }),
   getCurrent: () => api.get('/workspaces/current'),
-  update: (name: string) => api.patch('/workspaces/current', { name }),
+  update: (payload: string | { name?: string; slug?: string; logoUrl?: string | null }) =>
+    api.patch('/workspaces/current', typeof payload === 'string' ? { name: payload } : payload),
+  listDomains: () => api.get('/workspaces/current/domains'),
+  uploadLogo: (file: File) => {
+    const body = new FormData();
+    body.append('file', file);
+    return api.post('/workspaces/current/logo', body, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  removeLogo: () => api.delete('/workspaces/current/logo'),
   members: () => api.get('/workspaces/current/members'),
   invite: (email: string, role?: 'ADMIN' | 'MEMBER') =>
     api.post('/workspaces/current/invitations', { email, role }),
+  shareInviteLink: (invitationId: string) =>
+    api.post(`/workspaces/current/invitations/${invitationId}/share-link`),
   resendInvite: (invitationId: string) =>
     api.post(`/workspaces/current/invitations/${invitationId}/resend`),
   revokeInvite: (invitationId: string) =>
@@ -490,10 +521,12 @@ export const workspaceApi = {
 
 export const billingApi = {
   plans: () => api.get('/billing/plans'),
+  addons: () => api.get('/billing/addons'),
   subscription: () => api.get('/billing/subscription'),
   summary: () => api.get('/billing/summary'),
   checkout: (planKey: string, interval: 'MONTHLY' | 'ANNUAL') =>
     api.post('/billing/checkout', { planKey, interval }),
+  checkoutAddon: (addonKey: string) => api.post('/billing/addons/checkout', { addonKey }),
   portal: () => api.post('/billing/portal'),
 };
 

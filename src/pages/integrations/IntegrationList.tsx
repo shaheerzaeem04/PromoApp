@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
@@ -14,7 +14,8 @@ import {
   List,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Card, Badge, Button, Modal, Input, Select, PageSpinner, PageHeader, EmptyState } from '../../components/ui';
+import { Card, Badge, Button, Modal, Input, FilterSelect, PageSpinner, PageHeader, EmptyState, Checkbox, CheckboxGroup } from '../../components/ui';
+import type { FilterSelectOption } from '../../components/ui';
 import api, { integrationsApi, planLimitMessage } from '../../services/api';
 import { AUTOMATION_EVENTS, fieldLabel, healthVariant } from '../../utils/integrations';
 
@@ -24,8 +25,31 @@ const ICONS: Record<string, typeof Mail> = {
   GOOGLE_SHEETS: Table,
 };
 
-export function IntegrationListPage() {
+const PROVIDER_DOT: Record<string, string> = {
+  MAILCHIMP: 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.45)]',
+  KLAVIYO: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.45)]',
+  CONVERTKIT: 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.45)]',
+  ACTIVECAMPAIGN: 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.45)]',
+  OMNISEND: 'bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.45)]',
+  BEEHIIV: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.45)]',
+  MAILERLITE: 'bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.45)]',
+  GETRESPONSE: 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.45)]',
+  DRIP: 'bg-fuchsia-400 shadow-[0_0_8px_rgba(232,121,249,0.45)]',
+  AWEBER: 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.45)]',
+  CAMPAIGN_MONITOR: 'bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.45)]',
+  BREVO: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.45)]',
+  MAILJET: 'bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.45)]',
+  KEAP: 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.45)]',
+  CUSTOM_WEBHOOK: 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.45)]',
+  ZAPIER: 'bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.45)]',
+  GOOGLE_SHEETS: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.45)]',
+};
+
+const DEFAULT_PROVIDER_DOT = 'bg-primary-400 shadow-[0_0_8px_rgba(45,212,191,0.45)]';
+
+export function IntegrationListPage({ embedded = false }: { embedded?: boolean }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newIntegration, setNewIntegration] = useState({
     type: 'MAILCHIMP',
@@ -42,8 +66,8 @@ export function IntegrationListPage() {
     queryFn: () => integrationsApi.catalog(),
   });
 
-  const catalog = catalogData?.data?.data || [];
-  const selectedCap = catalog.find((item: any) => item.type === newIntegration.type);
+  const catalog = useMemo(() => catalogData?.data?.data || [], [catalogData]);
+  const selectedCap = catalog.find((item: { type: string; authFields?: string[] }) => item.type === newIntegration.type);
 
   const createMutation = useMutation({
     mutationFn: (payload: any) => integrationsApi.create(payload),
@@ -91,16 +115,26 @@ export function IntegrationListPage() {
   });
 
   const integrations = data?.data.data || [];
-  const typeOptions = useMemo(
+  const typeOptions = useMemo<FilterSelectOption[]>(
     () =>
-      catalog.map((item: any) => ({
-        value: item.type,
-        label: !item.serverConfigured
+      catalog.map((item: any) => {
+        const availabilityHint = !item.serverConfigured
+          ? 'Server credentials not configured'
+          : item.available
+            ? item.description || `${item.minPlan}+ plan`
+            : `Requires ${item.minPlan}+ plan`;
+        const label = !item.serverConfigured
           ? `${item.name} (not configured)`
           : item.available
             ? item.name
-            : `${item.name} (${item.minPlan}+)`,
-      })),
+            : `${item.name} (${item.minPlan}+)`;
+        return {
+          value: item.type as string,
+          label,
+          hint: availabilityHint,
+          dotClassName: PROVIDER_DOT[item.type] || DEFAULT_PROVIDER_DOT,
+        };
+      }),
     [catalog]
   );
 
@@ -113,18 +147,17 @@ export function IntegrationListPage() {
   if (isLoading) return <PageSpinner />;
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className={embedded ? 'space-y-6' : 'space-y-6 max-w-7xl'}>
+      {!embedded && (
       <PageHeader
         title="Integrations"
         description="Connect email, CRM, and automation tools. Tracking pixels live on each campaign’s Design step — they are not integrations."
         actions={
           <div className="flex gap-2">
-            <Link to="/integrations/deliveries">
-              <Button variant="secondary">
-                <List className="w-4 h-4" />
-                Delivery log
-              </Button>
-            </Link>
+            <Button variant="secondary" onPress={() => navigate('/integrations/deliveries')}>
+              <List className="w-4 h-4" />
+              Delivery log
+            </Button>
             <Button onClick={() => setShowAddModal(true)} data-testid="add-integration">
               <Plus className="w-5 h-5" />
               Add Integration
@@ -132,7 +165,15 @@ export function IntegrationListPage() {
           </div>
         }
       />
-
+      )}
+      {embedded && (
+        <div className="flex justify-end">
+          <Button onClick={() => setShowAddModal(true)} data-testid="add-integration">
+            <Plus className="w-5 h-5" />
+            Add Integration
+          </Button>
+        </div>
+      )}
       {integrations.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {integrations.map((integration: any, index: number) => {
@@ -232,12 +273,18 @@ export function IntegrationListPage() {
             value={newIntegration.name}
             onChange={(e) => setNewIntegration({ ...newIntegration, name: e.target.value })}
           />
-          <Select
-            label="Provider"
-            options={typeOptions}
-            value={newIntegration.type}
-            onChange={(e) => setNewIntegration({ ...newIntegration, type: e.target.value, config: {} })}
-          />
+          <div className="space-y-1.5">
+            <label className="label">
+              Provider
+            </label>
+            <FilterSelect
+              options={typeOptions}
+              value={newIntegration.type}
+              onChange={(value) => setNewIntegration({ ...newIntegration, type: value, config: {} })}
+              aria-label="Provider"
+              data-testid="integration-provider"
+            />
+          </div>
           {selectedCap && (
             <p className="text-sm text-zinc-400">
               {selectedCap.description} Auth: {selectedCap.authType.replace('_', ' ')}. Plan: {selectedCap.minPlan}+.
@@ -266,29 +313,22 @@ export function IntegrationListPage() {
             />
           ))}
           {isZapier && (
-            <fieldset>
-              <legend className="text-sm text-zinc-300 mb-2">Events</legend>
-              <div className="space-y-1">
-                {AUTOMATION_EVENTS.map((event) => (
-                  <label key={event.value} className="flex items-center gap-2 text-sm text-zinc-300">
-                    <input
-                      type="checkbox"
-                      checked={selectedEvents.includes(event.value)}
-                      onChange={(e) => {
-                        const next = e.target.checked
-                          ? [...selectedEvents, event.value]
-                          : selectedEvents.filter((item) => item !== event.value);
-                        setNewIntegration({
-                          ...newIntegration,
-                          config: { ...newIntegration.config, events: next },
-                        });
-                      }}
-                    />
-                    {event.label}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+            <CheckboxGroup
+              label="Events"
+              value={selectedEvents}
+              onChange={(next) =>
+                setNewIntegration({
+                  ...newIntegration,
+                  config: { ...newIntegration.config, events: next },
+                })
+              }
+            >
+              {AUTOMATION_EVENTS.map((event) => (
+                <Checkbox key={event.value} value={event.value}>
+                  {event.label}
+                </Checkbox>
+              ))}
+            </CheckboxGroup>
           )}
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>

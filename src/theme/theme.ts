@@ -12,7 +12,7 @@ export function readThemePreference(): ThemePreference {
   } catch {
     /* ignore */
   }
-  return 'system';
+  return 'dark';
 }
 
 export function getSystemTheme(): ResolvedTheme {

@@ -75,7 +75,8 @@ export function DateTimePicker({
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 320 });
 
   useEffect(() => {
-    if (selected) setCursor(startOfMonth(selected));
+    const next = parseLocal(value);
+    if (next) setCursor(startOfMonth(next));
   }, [value]);
 
   useEffect(() => {

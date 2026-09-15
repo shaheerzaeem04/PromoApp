@@ -51,7 +51,7 @@ export function BillingSuccessPage() {
       {state !== 'polling' && (
         <div className="flex justify-center gap-3">
           <Button onClick={() => window.location.reload()} data-testid="billing-success-refresh">Refresh</Button>
-          <Link to="/workspace?tab=billing" className="btn-secondary inline-flex">Billing</Link>
+          <Link to="/settings/billing" className="btn-secondary inline-flex">Billing</Link>
         </div>
       )}
       {state === 'polling' && (

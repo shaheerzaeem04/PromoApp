@@ -1,39 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   Gift,
   Users,
   Plus,
   ArrowRight,
-  Calendar,
   BarChart3,
   Plug,
   Trophy,
   Radio,
   Sparkles,
 } from 'lucide-react';
-import { Badge, Button, EmptyState, Skeleton } from '../../components/ui';
+import { Button, Card, EmptyState, PageSpinner } from '../../components/ui';
+import { CampaignListItem, type CampaignListItemData } from '../../components/campaigns/CampaignListItem';
 import { campaignApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import { formatNumber, formatRelativeTime } from '../../utils/formatters';
+import { formatNumber } from '../../utils/formatters';
 import { OnboardingChecklist } from '../../components/onboarding/OnboardingChecklist';
-
-const statusColors: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'default'> = {
-  ACTIVE: 'success',
-  DRAFT: 'default',
-  SCHEDULED: 'info',
-  PAUSED: 'warning',
-  ENDED: 'danger',
-};
-
-type CampaignRow = {
-  id: string;
-  title: string;
-  status: string;
-  createdAt: string;
-  _count?: { participants?: number; entries?: number };
-};
 
 function greetingForHour(hour: number): string {
   if (hour < 12) return 'Good morning';
@@ -51,6 +35,7 @@ const easeOut = [0.22, 1, 0.36, 1] as const;
 
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
+  const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
 
   const { data: campaigns, isLoading } = useQuery({
@@ -84,9 +69,9 @@ export function DashboardPage() {
     },
   };
 
-  if (isLoading || loadingSummary) return <DashboardSkeleton />;
+  if (isLoading || loadingSummary) return <PageSpinner />;
 
-  const rows: CampaignRow[] = campaigns?.data.data || [];
+  const rows: CampaignListItemData[] = campaigns?.data.data || [];
   const liveCount = totals?.activeCampaigns || 0;
   const stats = [
     {
@@ -123,7 +108,7 @@ export function DashboardPage() {
   const shortcuts = [
     { to: '/campaigns', label: 'Campaigns', hint: 'Create and manage giveaways', icon: Gift },
     { to: '/analytics', label: 'Analytics', hint: 'See what is converting', icon: BarChart3 },
-    { to: '/integrations', label: 'Integrations', hint: 'Email, sheets, and webhooks', icon: Plug },
+    { to: '/settings/integrations', label: 'Integrations', hint: 'Email, sheets, and webhooks', icon: Plug },
   ];
 
   return (
@@ -140,18 +125,14 @@ export function DashboardPage() {
             <p className="page-desc mt-2">{healthCopy(liveCount)}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <Link to="/analytics">
-              <Button variant="secondary">
-                <BarChart3 className="w-4 h-4" />
-                Analytics
-              </Button>
-            </Link>
-            <Link to="/campaigns/new">
-              <Button>
-                <Plus className="w-4 h-4" />
-                New campaign
-              </Button>
-            </Link>
+            <Button variant="secondary" onPress={() => navigate('/analytics')}>
+              <BarChart3 className="w-4 h-4" />
+              Analytics
+            </Button>
+            <Button onPress={() => navigate('/campaigns/new')}>
+              <Plus className="w-4 h-4" />
+              New campaign
+            </Button>
           </div>
         </div>
       </motion.header>
@@ -203,64 +184,29 @@ export function DashboardPage() {
           </div>
 
           {rows.length > 0 ? (
-            <motion.div variants={stagger} className="space-y-3">
-              {rows.map((campaign) => (
-                <motion.div key={campaign.id} variants={fadeUp}>
-                  <Link
-                    to={`/campaigns/${campaign.id}`}
-                    className="card-interactive flex items-center gap-4 p-4 group"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-800/80 text-primary-300 border border-primary-500/15">
-                      <Gift className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <h3 className="font-medium truncate text-zinc-50 transition-colors duration-300 group-hover:text-primary-200">
-                          {campaign.title}
-                        </h3>
-                        <Badge variant={statusColors[campaign.status] || 'default'} size="sm">
-                          {campaign.status}
-                        </Badge>
-                        {campaign.status === 'ACTIVE' && (
-                          <span className="dash-pulse hidden sm:inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-zinc-500">
-                        <span className="inline-flex items-center gap-1">
-                          <Users className="w-3.5 h-3.5" />
-                          {formatNumber(campaign._count?.participants || 0)}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Trophy className="w-3.5 h-3.5" />
-                          {formatNumber(campaign._count?.entries || 0)}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          {formatRelativeTime(campaign.createdAt)}
-                        </span>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 shrink-0 text-zinc-600 transition-all duration-300 group-hover:text-primary-400 group-hover:translate-x-0.5" />
-                  </Link>
-                </motion.div>
-              ))}
-            </motion.div>
+            <Card padding="none" className="overflow-hidden">
+              <ul className="divide-y divide-zinc-800/70">
+                {rows.map((campaign) => (
+                  <li key={campaign.id}>
+                    <CampaignListItem campaign={campaign} />
+                  </li>
+                ))}
+              </ul>
+            </Card>
           ) : (
-            <div className="card">
+            <Card padding="none">
               <EmptyState
                 icon={<Gift className="w-5 h-5" />}
                 title="No campaigns yet"
                 description="Create a giveaway, add a prize and an entry action, then publish."
                 action={
-                  <Link to="/campaigns/new">
-                    <Button>
-                      <Plus className="w-4 h-4" />
-                      Create campaign
-                    </Button>
-                  </Link>
+                  <Button onPress={() => navigate('/campaigns/new')}>
+                    <Plus className="w-4 h-4" />
+                    Create campaign
+                  </Button>
                 }
               />
-            </div>
+            </Card>
           )}
         </section>
 
@@ -276,7 +222,7 @@ export function DashboardPage() {
                   <item.icon className="w-4 h-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-zinc-100 transition-colors duration-300 group-hover:text-primary-200">
+                  <p className="text-sm font-medium text-zinc-100 transition-colors duration-300 group-hover:text-primary-400">
                     {item.label}
                   </p>
                   <p className="text-xs text-zinc-500 mt-0.5">{item.hint}</p>
@@ -288,11 +234,11 @@ export function DashboardPage() {
               to="/campaigns/new"
               className="dash-shortcut group border-primary-500/35 bg-primary-500/5"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-500 text-zinc-950">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-500 text-on-primary">
                 <Sparkles className="w-4 h-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-primary-100">Start a campaign</p>
+                <p className="text-sm font-medium text-primary-400">Start a campaign</p>
                 <p className="text-xs text-zinc-500 mt-0.5">Prize, entry action, then publish</p>
               </div>
               <Plus className="w-4 h-4 shrink-0 text-primary-400" />
@@ -304,37 +250,3 @@ export function DashboardPage() {
   );
 }
 
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-8 max-w-7xl" aria-busy="true" aria-label="Loading dashboard">
-      <div className="dash-hero p-6 md:p-8">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-10 w-64 sm:w-80 mt-4" />
-        <Skeleton className="h-4 w-72 max-w-full mt-3" />
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }, (_, index) => (
-          <div key={index} className="dash-stat p-5">
-            <Skeleton className="h-9 w-9 rounded-lg" />
-            <Skeleton className="h-3 w-16 mt-4" />
-            <Skeleton className="h-8 w-20 mt-2" />
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-3">
-          <Skeleton className="h-5 w-40" />
-          {Array.from({ length: 3 }, (_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-xl" />
-          ))}
-        </div>
-        <div className="space-y-3">
-          <Skeleton className="h-5 w-28" />
-          {Array.from({ length: 3 }, (_, index) => (
-            <Skeleton key={index} className="h-16 w-full rounded-xl" />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}

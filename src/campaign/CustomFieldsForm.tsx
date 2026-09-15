@@ -1,3 +1,5 @@
+import { Checkbox, CheckboxGroup } from '../components/ui';
+
 interface CustomFieldsFormProps {
   fields: any[];
   values: Record<string, any>;
@@ -53,30 +55,30 @@ export function CustomFieldsForm({ fields, values, onChange, errors = {}, disabl
               </div>
             ) : field.fieldType === 'CHECKBOX' ? (
               options.length ? (
-                <div className="space-y-1">
-                  {options.map((option: string) => {
-                    const selected = Array.isArray(values[field.id]) ? values[field.id] : [];
-                    return (
-                      <label key={option} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          disabled={disabled}
-                          checked={selected.includes(option)}
-                          onChange={(e) => {
-                            const next = e.target.checked ? [...selected, option] : selected.filter((item: string) => item !== option);
-                            setValue(field.id, next);
-                          }}
-                        />
-                        {option}
-                      </label>
-                    );
-                  })}
-                </div>
+                <CheckboxGroup
+                  tone="giveaway"
+                  aria-label={field.label}
+                  isDisabled={disabled}
+                  isRequired={field.required}
+                  value={Array.isArray(values[field.id]) ? values[field.id] : []}
+                  onChange={(next) => setValue(field.id, next)}
+                >
+                  {options.map((option: string) => (
+                    <Checkbox key={option} value={option} tone="giveaway">
+                      {option}
+                    </Checkbox>
+                  ))}
+                </CheckboxGroup>
               ) : (
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" disabled={disabled} checked={Boolean(values[field.id])} required={field.required} onChange={(e) => setValue(field.id, e.target.checked)} />
+                <Checkbox
+                  tone="giveaway"
+                  isDisabled={disabled}
+                  isRequired={field.required}
+                  isSelected={Boolean(values[field.id])}
+                  onChange={(checked) => setValue(field.id, checked)}
+                >
                   {field.placeholder || field.label}
-                </label>
+                </Checkbox>
               )
             ) : (
               <input

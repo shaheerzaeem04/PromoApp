@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../../utils/cn';
 import {
   LayoutDashboard,
@@ -9,40 +9,68 @@ import {
   BarChart3,
   Plug,
   ChevronLeft,
-  Menu,
+  Menu as MenuIcon,
   X,
   CircleHelp,
+  LayoutTemplate,
+  User,
+  Palette,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useWorkspaceStore } from '../../store/workspaceStore';
 import { authApi, workspaceApi } from '../../services/api';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Button, MenuTrigger, Menu, MenuItem, MenuSeparator } from '../ui';
+import { UserAvatar } from '../account/UserAvatar';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Campaigns', href: '/campaigns', icon: Gift },
+  { name: 'Templates', href: '/templates', icon: LayoutTemplate },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Integrations', href: '/integrations', icon: Plug },
+  { name: 'Integrations', href: '/settings/integrations', icon: Plug },
 ];
 
 const secondary = [
-  { name: 'Workspace', href: '/workspace', icon: Trophy },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  {
+    name: 'Workspace',
+    href: '/settings/general',
+    icon: Trophy,
+    match: ['/settings/general', '/settings/team', '/settings/usage', '/settings/billing'],
+  },
+  {
+    name: 'Settings',
+    href: '/settings/profile',
+    icon: Settings,
+    match: ['/settings/profile', '/settings/security', '/settings/notifications', '/settings/appearance', '/settings/account'],
+  },
 ];
-
-function initials(name?: string) {
-  if (!name) return 'U';
-  return name.split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase();
-}
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const workspaces = useWorkspaceStore((s) => s.workspaces);
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
   const setActiveWorkspaceId = useWorkspaceStore((s) => s.setActiveWorkspaceId);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)');
+    const update = () => setIsDesktop(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
+    const node = sidebarRef.current;
+    if (!node) return;
+    node.inert = !isDesktop && !mobileOpen;
+  }, [isDesktop, mobileOpen]);
 
   useEffect(() => {
     workspaceApi.list().then((response) => {
@@ -69,18 +97,13 @@ export function Sidebar() {
   };
 
   const linkClass = (active: boolean) =>
-    cn(
-      'flex items-center gap-2.5 px-2.5 h-9 rounded-lg text-sm transition-colors',
-      active
-        ? 'bg-zinc-800 text-zinc-50'
-        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
-    );
+    cn('sidebar-link', active && 'sidebar-link--active', collapsed && 'justify-center');
 
   const nav = (
     <>
       <div className="flex items-center h-14 px-3 gap-2">
         <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shrink-0">
-          <Trophy className="w-4 h-4 text-zinc-950" />
+          <Trophy className="w-4 h-4 text-on-primary" />
         </div>
         {!collapsed && (
           <span className="font-semibold text-sm tracking-tight">PromoApp</span>
@@ -133,7 +156,7 @@ export function Sidebar() {
         })}
         <div className={cn('pt-3 mt-2 border-t border-zinc-800/80 space-y-0.5', collapsed && 'border-transparent')}>
           {secondary.map((item) => {
-            const isActive = location.pathname.startsWith(item.href);
+            const isActive = item.match.some((path) => location.pathname.startsWith(path));
             return (
               <NavLink key={item.name} to={item.href} className={linkClass(isActive)}>
                 <item.icon className="w-4 h-4 flex-shrink-0" />
@@ -149,28 +172,56 @@ export function Sidebar() {
       </nav>
 
       <div className="p-2 border-t border-zinc-800/80">
-        <div className={cn('flex items-center gap-2.5 px-2 py-1.5', collapsed && 'justify-center')}>
-          <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0 text-xs font-semibold text-zinc-200">
-            {initials(user?.name)}
-          </div>
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-zinc-500 truncate">{user?.email}</p>
-            </div>
-          )}
-        </div>
-        <button
-          onClick={handleLogout}
-          data-testid="logout"
-          className={cn(
-            'flex items-center gap-2.5 w-full px-2.5 h-9 rounded-lg text-sm text-zinc-400 hover:text-red-300 hover:bg-red-500/10 transition-colors',
-            collapsed && 'justify-center'
-          )}
-        >
-          <LogOut className="w-4 h-4" />
-          {!collapsed && <span>Log out</span>}
-        </button>
+        <MenuTrigger placement="top start">
+          <Button
+            variant="ghost"
+            data-testid="account-menu"
+            aria-label="Account menu"
+            className={cn(
+              'w-full h-auto py-1.5 px-2 justify-start text-left font-normal',
+              collapsed && 'justify-center px-0'
+            )}
+          >
+            <UserAvatar
+              name={user?.name}
+              avatar={user?.avatar}
+              className="w-8 h-8 shrink-0"
+              textClassName="text-xs"
+            />
+            {!collapsed && (
+              <span className="flex-1 min-w-0 text-left">
+                <span className="block text-sm font-medium truncate text-zinc-100">{user?.name}</span>
+                <span className="block text-xs text-zinc-500 truncate">{user?.email}</span>
+              </span>
+            )}
+          </Button>
+          <Menu aria-label="Account" className="min-w-56">
+            <MenuItem isDisabled textValue={user?.email || 'Account'} className="opacity-100 cursor-default">
+              <div className="min-w-0 py-0.5">
+                <p className="text-sm font-medium truncate text-zinc-50">{user?.name}</p>
+                <p className="text-xs text-zinc-500 truncate">{user?.email}</p>
+              </div>
+            </MenuItem>
+            <MenuSeparator />
+            <MenuItem textValue="Account Settings" onAction={() => navigate('/settings/profile')}>
+              <User className="w-4 h-4 text-primary-400 shrink-0" />
+              Account Settings
+            </MenuItem>
+            <MenuItem textValue="Appearance" onAction={() => navigate('/settings/appearance')}>
+              <Palette className="w-4 h-4 text-primary-400 shrink-0" />
+              Appearance
+            </MenuItem>
+            <MenuItem textValue="Workspace Settings" onAction={() => navigate('/settings/general')}>
+              <Trophy className="w-4 h-4 text-primary-400 shrink-0" />
+              Workspace Settings
+            </MenuItem>
+            <MenuSeparator />
+            <MenuItem textValue="Log out" className="text-red-400" onAction={() => void handleLogout()}>
+              <LogOut className="w-4 h-4 shrink-0" />
+              <span data-testid="logout">Log out</span>
+            </MenuItem>
+          </Menu>
+        </MenuTrigger>
       </div>
     </>
   );
@@ -181,16 +232,21 @@ export function Sidebar() {
         type="button"
         className="lg:hidden fixed top-3 left-3 z-40 p-2 rounded-lg bg-zinc-900 border border-zinc-800 min-h-10 min-w-10"
         aria-label="Open menu"
+        aria-expanded={mobileOpen}
+        aria-controls="app-sidebar"
         onClick={() => setMobileOpen(true)}
       >
-        <Menu className="w-5 h-5" />
+        <MenuIcon className="w-5 h-5" />
       </button>
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 bg-black/60" onClick={() => setMobileOpen(false)} aria-hidden="true" />
       )}
       <aside
+        ref={sidebarRef}
+        id="app-sidebar"
+        aria-hidden={isDesktop ? undefined : !mobileOpen}
         className={cn(
-          'flex flex-col h-screen bg-zinc-950 border-r border-zinc-800/80 transition-all duration-200 z-50',
+          'flex flex-col h-screen bg-background border-r border-border/80 transition-all duration-200 z-50 overflow-visible',
           'fixed inset-y-0 left-0 lg:static',
           mobileOpen ? 'translate-x-0 w-60' : '-translate-x-full lg:translate-x-0',
           collapsed ? 'lg:w-[4.25rem]' : 'lg:w-56',

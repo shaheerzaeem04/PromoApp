@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Card, Button, Input, Modal, Select, Badge, PageSpinner, EmptyState } from '../../../components/ui';
+import { Card, Button, Input, Modal, Select, Badge, PageSpinner, EmptyState, Checkbox, SearchField } from '../../../components/ui';
 import { winnerApi, entryApi, exportApi, workspaceApi } from '../../../services/api';
 import { formatDateTime, formatNumber } from '../../../utils/formatters';
 import { apiErrorMessage } from './constants';
@@ -367,24 +367,18 @@ export function WinnersTab({
               {preview?.highRiskUnresolvedCount || highRiskWarning} unresolved high-risk participant(s). Review fraud or proceed anyway.
             </p>
           )}
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={drawForm.excludePreviousWinners}
-              onChange={(e) => setDrawForm({ ...drawForm, excludePreviousWinners: e.target.checked })}
-              className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-primary-500"
-            />
+          <Checkbox
+            isSelected={drawForm.excludePreviousWinners}
+            onChange={(checked) => setDrawForm({ ...drawForm, excludePreviousWinners: checked })}
+          >
             Exclude previous winners
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={drawForm.excludeDisqualified}
-              onChange={(e) => setDrawForm({ ...drawForm, excludeDisqualified: e.target.checked })}
-              className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-primary-500"
-            />
+          </Checkbox>
+          <Checkbox
+            isSelected={drawForm.excludeDisqualified}
+            onChange={(checked) => setDrawForm({ ...drawForm, excludeDisqualified: checked })}
+          >
             Exclude disqualified participants (recommended)
-          </label>
+          </Checkbox>
           {remaining <= 0 && <p className="text-sm text-red-400">No remaining quantity for this prize.</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setShowDraw(false)}>Cancel</Button>
@@ -413,11 +407,12 @@ export function WinnersTab({
             value={manualForm.prizeId}
             onChange={(e) => setManualForm({ ...manualForm, prizeId: e.target.value })}
           />
-          <Input
+          <SearchField
             label="Search participant"
-            value={participantSearch}
-            onChange={(e) => setParticipantSearch(e.target.value)}
             placeholder="Name or email"
+            value={participantSearch}
+            onChange={setParticipantSearch}
+            onSubmit={setParticipantSearch}
           />
           <div className="max-h-48 overflow-y-auto space-y-1">
             {(participantResults?.data?.data || []).map((row: any) => (

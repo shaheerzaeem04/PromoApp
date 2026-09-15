@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ThemeProvider } from './theme/ThemeProvider';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -21,19 +22,21 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ErrorBoundary>
+        <ThemeProvider>
         <App />
         <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#18181b',
-              color: '#fff',
+              background: 'var(--toast-bg, #18181b)',
+              color: 'var(--toast-fg, #fff)',
               borderRadius: '12px',
-              border: '1px solid #27272a',
+              border: '1px solid var(--toast-border, #27272a)',
             },
           }}
         />
+        </ThemeProvider>
         </ErrorBoundary>
       </BrowserRouter>
     </QueryClientProvider>

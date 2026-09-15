@@ -1,43 +1,82 @@
-import { forwardRef, InputHTMLAttributes } from 'react';
-import { cn } from '../../utils/cn';
+import { forwardRef, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from 'react';
+import { TextField } from './TextField';
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'defaultValue' | 'min' | 'max' | 'step'> {
   label?: string;
   error?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
+  suffix?: ReactNode;
+  value?: string | number;
+  defaultValue?: string | number;
+  min?: string | number;
+  max?: string | number;
+  step?: string | number;
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
+  'data-testid'?: string;
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, icon, id, ...props }, ref) => {
-    const inputId = id || props.name || label?.toLowerCase().replace(/\s+/g, '-');
-    return (
-      <div className="space-y-1.5">
-        {label && <label className="label" htmlFor={inputId}>{label}</label>}
-        <div className="relative">
-          {icon && (
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
-              {icon}
-            </div>
-          )}
-          <input
-            id={inputId}
-            ref={ref}
-            aria-invalid={Boolean(error)}
-            className={cn(
-              'input',
-              icon && 'pl-11',
-              error && 'border-red-500 focus:ring-red-500/50 focus:border-red-500',
-              className
-            )}
-            {...props}
-          />
-        </div>
-        {error && <p className="text-sm text-red-400" role="alert">{error}</p>}
-      </div>
-    );
-  }
-);
+/** Compatibility wrapper: existing Input call sites render the shared React Aria TextField. */
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  {
+    error,
+    disabled,
+    required,
+    onChange,
+    onBlur,
+    value,
+    defaultValue,
+    name,
+    type,
+    placeholder,
+    label,
+    icon,
+    suffix,
+    className,
+    autoComplete,
+    inputMode,
+    min,
+    max,
+    step,
+    maxLength,
+    id,
+    'data-testid': testId,
+  },
+  ref
+) {
+  return (
+    <TextField
+      id={id}
+      name={name}
+      type={type}
+      label={label}
+      placeholder={placeholder}
+      icon={icon}
+      suffix={suffix}
+      className={className}
+      autoComplete={autoComplete}
+      inputMode={inputMode}
+      min={min}
+      max={max}
+      step={step}
+      maxLength={maxLength}
+      inputRef={ref}
+      value={value === undefined || value === null ? undefined : String(value)}
+      defaultValue={defaultValue === undefined || defaultValue === null ? undefined : String(defaultValue)}
+      isDisabled={disabled}
+      isRequired={required}
+      isInvalid={Boolean(error)}
+      errorMessage={error}
+      data-testid={testId}
+      onBlur={onBlur}
+      onChange={(next) => {
+        if (!onChange) return;
+        onChange({
+          target: { value: next, name: name ?? '', type: type ?? 'text' },
+          currentTarget: { value: next, name: name ?? '', type: type ?? 'text' },
+        } as ChangeEvent<HTMLInputElement>);
+      }}
+    />
+  );
+});
 
 Input.displayName = 'Input';
-
-

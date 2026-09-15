@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, Input } from '../../components/ui';
+import { Button, Checkbox, Form, TextField } from '../../components/ui';
 import { authApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { storePendingPlan } from '../../utils/pendingPlan';
@@ -33,10 +33,13 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const {
-    register,
+    control,
     handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>();
+    watch,
+    setValue,
+  } = useForm<LoginForm>({
+    defaultValues: { email: '', password: '', rememberMe: false },
+  });
 
   const onSubmit = async (data: LoginForm) => {
     setLoading(true);
@@ -69,52 +72,80 @@ export function LoginPage() {
         <p className="text-zinc-400 mt-1.5 text-sm">Sign in to continue</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <Input
-          label="Email"
-          type="email"
-          placeholder="you@example.com"
-          icon={<Mail className="w-5 h-5" />}
-          error={errors.email?.message}
-          {...register('email', {
+      <Form onSubmit={handleSubmit(onSubmit)} validationBehavior="aria">
+        <Controller
+          control={control}
+          name="email"
+          rules={{
             required: 'Email is required',
             pattern: {
               value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
               message: 'Invalid email address',
             },
-          })}
+          }}
+          render={({ field, fieldState }) => (
+            <TextField
+              label="Email"
+              name={field.name}
+              type="email"
+              placeholder="you@example.com"
+              autoComplete="email"
+              icon={<Mail className="w-5 h-5" />}
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              inputRef={field.ref}
+              isRequired
+              validationBehavior="aria"
+              isInvalid={fieldState.invalid}
+              errorMessage={fieldState.error?.message}
+            />
+          )}
         />
 
-        <div className="relative">
-          <Input
-            label="Password"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="••••••••"
-            icon={<Lock className="w-5 h-5" />}
-            error={errors.password?.message}
-            {...register('password', {
-              required: 'Password is required',
-            })}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-[38px] text-zinc-500 hover:text-zinc-300"
-          >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              data-testid="remember-me"
-              className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-primary-500 focus:ring-primary-500"
-              {...register('rememberMe')}
+        <Controller
+          control={control}
+          name="password"
+          rules={{ required: 'Password is required' }}
+          render={({ field, fieldState }) => (
+            <TextField
+              label="Password"
+              name={field.name}
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              autoComplete="current-password"
+              icon={<Lock className="w-5 h-5" />}
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              inputRef={field.ref}
+              isRequired
+              validationBehavior="aria"
+              isInvalid={fieldState.invalid}
+              errorMessage={fieldState.error?.message}
+              suffix={
+                <Button
+                  variant="icon"
+                  size="sm"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  onPress={() => setShowPassword((open) => !open)}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </Button>
+              }
             />
-            <span className="text-sm text-zinc-400">Remember me</span>
-          </label>
+          )}
+        />
+
+        <div className="flex items-center justify-between ">
+          <Checkbox
+            data-testid="remember-me"
+            align="center"
+            isSelected={Boolean(watch('rememberMe'))}
+            onChange={(checked) => setValue('rememberMe', checked)}
+          >
+            Remember me
+          </Checkbox>
           <Link to="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300">
             Forgot password?
           </Link>
@@ -123,7 +154,7 @@ export function LoginPage() {
         <Button type="submit" className="w-full" loading={loading}>
           Sign in
         </Button>
-      </form>
+      </Form>
 
       <div className="mt-8">
         <div className="relative">

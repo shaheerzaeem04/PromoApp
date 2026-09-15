@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Card, Button, DateTimePicker, Input } from '../../../components/ui';
+import { Card, Button, DateTimePicker, Input, Checkbox } from '../../../components/ui';
 import { campaignApi } from '../../../services/api';
 import { apiErrorMessage, fromDateTimeLocal, toDateTimeLocal } from './constants';
 
@@ -82,15 +82,13 @@ export function OverviewTab({ campaignId, data }: { campaignId: string; data: an
             ['enableReferrals', 'Enable referrals'],
             ['enableSpinWheel', 'Enable spin wheel'],
           ].map(([key, label]) => (
-            <label key={key} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={(form as any)[key]}
-                onChange={(e) => setForm({ ...form, [key]: e.target.checked })}
-                className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-primary-500"
-              />
+            <Checkbox
+              key={key}
+              isSelected={Boolean((form as any)[key])}
+              onChange={(checked) => setForm({ ...form, [key]: checked })}
+            >
               {label}
-            </label>
+            </Checkbox>
           ))}
         </div>
         <div className="flex justify-end pt-2">

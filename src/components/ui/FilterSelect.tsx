@@ -95,7 +95,7 @@ export function FilterSelect({
             className={cn(
               'absolute z-50 mt-2 w-full overflow-hidden origin-top',
               'rounded-xl border border-primary-500/35',
-              'bg-zinc-950/95',
+              'bg-zinc-900',
               'shadow-xl shadow-black/40 ring-1 ring-primary-500/15',
               listClassName
             )}
