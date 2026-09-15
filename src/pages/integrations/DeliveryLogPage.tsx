@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Card, Badge, Button, FilterSelect, PageSpinner, Modal, PageHeader } from '../../components/ui';
+import { Badge, Button, FilterSelect, PageSpinner, Modal, PageHeader } from '../../components/ui';
 import type { FilterSelectOption } from '../../components/ui';
 import { integrationsApi, publishingApi } from '../../services/api';
 
@@ -94,7 +94,7 @@ export function DeliveryLogPage({ embedded = false }: { embedded?: boolean }) {
   return (
     <div className="space-y-6">
       {!embedded && <PageHeader title="Delivery log" description="Outbound integration attempts. Secrets are never shown." />}
-      <Card className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+      <div className="flex flex-col md:flex-row gap-3 md:items-center">
         <FilterSelect
           options={providerOptions}
           value={filters.provider}
@@ -112,39 +112,39 @@ export function DeliveryLogPage({ embedded = false }: { embedded?: boolean }) {
         {!embedded && (
           <Link to="/integrations" className="text-sm text-primary-400 self-center">Back to integrations</Link>
         )}
-      </Card>
+      </div>
       {isLoading ? (
         <PageSpinner />
       ) : (
-        <Card className="overflow-x-auto" padding="none">
-          <table className="w-full text-sm" data-testid="delivery-log">
+        <div className="overflow-x-auto">
+          <table className="ui-table ui-table--page table-auto w-full text-sm" data-testid="delivery-log">
             <thead>
-              <tr className="text-left text-zinc-400 border-b border-zinc-800">
-                <th className="p-3">Provider</th>
-                <th className="p-3">Campaign</th>
-                <th className="p-3">Event</th>
-                <th className="p-3">Participant</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Attempt</th>
-                <th className="p-3">When</th>
-                <th className="p-3"></th>
+              <tr>
+                <th>Provider</th>
+                <th>Campaign</th>
+                <th>Event</th>
+                <th>Participant</th>
+                <th>Status</th>
+                <th>Attempt</th>
+                <th>When</th>
+                <th></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800">
+            <tbody>
               {rows.map((row: any) => (
                 <tr key={row.id}>
-                  <td className="p-3">{row.integration?.name || row.integration?.type}</td>
-                  <td className="p-3">{row.campaignTitle || row.campaignId.slice(0, 8)}</td>
-                  <td className="p-3">{row.event}</td>
-                  <td className="p-3">{row.participantEmail || '—'}</td>
-                  <td className="p-3">
+                  <td>{row.integration?.name || row.integration?.type}</td>
+                  <td>{row.campaignTitle || row.campaignId.slice(0, 8)}</td>
+                  <td>{row.event}</td>
+                  <td>{row.participantEmail || '—'}</td>
+                  <td>
                     <Badge variant={row.status === 'SUCCESS' ? 'success' : row.status === 'FAILED' ? 'danger' : 'warning'}>
                       {row.status}
                     </Badge>
                   </td>
-                  <td className="p-3">{row.attempt}</td>
-                  <td className="p-3 text-zinc-500">{new Date(row.createdAt).toLocaleString()}</td>
-                  <td className="p-3 flex gap-2">
+                  <td>{row.attempt}</td>
+                  <td className="text-zinc-500">{new Date(row.createdAt).toLocaleString()}</td>
+                  <td className="flex gap-2">
                     <Button size="sm" variant="ghost" onClick={() => setDetail(row)}>Details</Button>
                     {row.retryable && (
                       <Button size="sm" variant="ghost" onClick={() => retry.mutate(row)} loading={retry.isPending}>Retry</Button>
@@ -154,12 +154,12 @@ export function DeliveryLogPage({ embedded = false }: { embedded?: boolean }) {
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-zinc-500">No deliveries yet.</td>
+                  <td colSpan={8} className="text-center text-zinc-500">No deliveries yet.</td>
                 </tr>
               )}
             </tbody>
           </table>
-        </Card>
+        </div>
       )}
       <Modal isOpen={!!detail} onClose={() => setDetail(null)} title="Delivery details" size="md">
         {detail && (

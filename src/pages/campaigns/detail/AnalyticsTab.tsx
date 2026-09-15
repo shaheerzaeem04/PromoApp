@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { Download, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Card, Button, PageSpinner } from '../../../components/ui';
+import { Card, Button, PageSpinner, Stat } from '../../../components/ui';
 import { campaignApi, exportApi } from '../../../services/api';
 import { formatNumber } from '../../../utils/formatters';
 import { apiErrorMessage } from './constants';
@@ -29,7 +29,7 @@ const RANGES = [
 function RangeToggle({ value, onChange }: { value: string; onChange: (next: string) => void }) {
   return (
     <div
-      className="inline-flex items-center rounded-xl border border-primary-500/25 bg-zinc-900 p-1 gap-0.5"
+      className="inline-flex items-center rounded-lg border border-zinc-800 bg-zinc-900 p-0.5 gap-0.5"
       role="group"
       aria-label="Date range"
     >
@@ -41,10 +41,10 @@ function RangeToggle({ value, onChange }: { value: string; onChange: (next: stri
             type="button"
             onClick={() => onChange(item.value)}
             className={cn(
-              'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+              'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
               active
-                ? 'bg-primary-500/20 text-primary-400 border border-primary-500/35'
-                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+                ? 'bg-zinc-800 text-zinc-50'
+                : 'text-zinc-400 hover:text-zinc-200'
             )}
           >
             {item.label}
@@ -128,20 +128,14 @@ export function AnalyticsTab({ campaignId }: { campaignId: string }) {
         <RangeToggle value={range} onChange={setRange} />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-x-8 gap-y-6 py-5 border-y border-zinc-800/60">
         {kpis.map((stat) => (
-          <div
+          <Stat
             key={stat.label}
-            className="dash-stat p-4"
+            label={stat.label}
+            value={typeof stat.value === 'number' ? formatNumber(stat.value) : stat.value}
             data-testid={`analytics-${stat.label.toLowerCase().replace(/\s+/g, '-')}`}
-          >
-            <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
-              {stat.label}
-            </p>
-            <p className="text-xl font-semibold tabular-nums mt-1 text-zinc-50">
-              {typeof stat.value === 'number' ? formatNumber(stat.value) : stat.value}
-            </p>
-          </div>
+          />
         ))}
       </div>
       <p className="text-xs text-zinc-500">

@@ -503,7 +503,7 @@ export function CampaignBuilderPage() {
       {/* Plain sticky — avoid motion/transform on this node (breaks position:sticky) */}
       <div className="builder-sticky-bar sticky top-0 z-20 flex items-center justify-between gap-3 px-4 py-3 border-b border-zinc-800 bg-zinc-950">
         <div className="relative z-[1] flex items-center gap-3 min-w-0">
-          <Link to={state.campaignId ? `/campaigns/${state.campaignId}` : '/campaigns'} className="p-2 rounded-lg hover:bg-zinc-800" aria-label="Back to campaigns">
+          <Link to={state.campaignId ? `/campaigns/${state.campaignId}` : '/campaigns'} className="icon-quiet h-9 w-9" aria-label="Back to campaigns">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="min-w-0">

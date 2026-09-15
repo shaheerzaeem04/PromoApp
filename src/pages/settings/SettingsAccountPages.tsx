@@ -3,7 +3,8 @@ import { Controller, useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { User, Mail, Lock, Key, Save, Shield, Upload, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Card, Button, Checkbox, Form, TextField, Modal } from '../../components/ui';
+import { Button, Checkbox, Form, TextField, Modal } from '../../components/ui';
+import { SettingsSection } from './SettingsSection';
 import { UserAvatar } from '../../components/account/UserAvatar';
 import { authApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
@@ -110,14 +111,8 @@ export function SettingsProfilePage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold">Profile Settings</h2>
-        <p className="text-sm text-zinc-500 mt-1">Manage your personal information.</p>
-      </div>
-
-      <Card className="p-6 space-y-4">
-        <h3 className="text-base font-semibold">Full name</h3>
+    <div>
+      <SettingsSection title="Profile Settings" description="Manage your personal information.">
         <Form
           onSubmit={handleSubmit((data) => saveName.mutate({ name: data.name.trim() }))}
           validationBehavior="aria"
@@ -159,10 +154,9 @@ export function SettingsProfilePage() {
             Save Changes
           </Button>
         </Form>
-      </Card>
+      </SettingsSection>
 
-      <Card className="p-6 space-y-4">
-        <h3 className="text-base font-semibold">Email address</h3>
+      <SettingsSection title="Email address">
         <TextField
           label="Email"
           name="accountEmail"
@@ -186,11 +180,12 @@ export function SettingsProfilePage() {
         <Button type="button" variant="secondary" onClick={() => setEmailOpen(true)} data-testid="change-email">
           Change Email
         </Button>
-      </Card>
+      </SettingsSection>
 
-      <Card className="p-6 space-y-4">
-        <h3 className="text-base font-semibold">Profile picture</h3>
-        <p className="text-sm text-zinc-500">Recommended ~200×200. Max 2MB. JPEG, PNG, GIF, or WebP.</p>
+      <SettingsSection
+        title="Profile picture"
+        description="Recommended ~200×200. Max 2MB. JPEG, PNG, GIF, or WebP."
+      >
         <div className="flex items-center gap-4">
           {preview ? (
             <img src={preview} alt="Profile picture preview" className="w-20 h-20 rounded-full object-cover border border-zinc-800" />
@@ -225,9 +220,7 @@ export function SettingsProfilePage() {
           )}
         </div>
         <div
-          className={`border border-dashed rounded-xl p-6 text-center text-sm transition-colors ${
-            dragOver ? 'border-primary-500 bg-primary-500/5 text-zinc-200' : 'border-zinc-700 text-zinc-500'
-          }`}
+          className={dragOver ? 'settings-dropzone is-over' : 'settings-dropzone'}
           onDragOver={(e) => {
             e.preventDefault();
             setDragOver(true);
@@ -241,7 +234,7 @@ export function SettingsProfilePage() {
         >
           Drag and drop an image here, or browse.
         </div>
-      </Card>
+      </SettingsSection>
 
       <ChangeEmailModal
         isOpen={emailOpen}
@@ -378,11 +371,9 @@ export function SettingsSecurityPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-1">Change Password</h2>
-        <p className="text-sm text-zinc-500 mb-6">Update your password to keep your account secure.</p>
-        <ul className="mb-6 text-sm text-zinc-400 space-y-1 list-disc pl-5">
+    <div>
+      <SettingsSection title="Change Password" description="Update your password to keep your account secure.">
+        <ul className="text-sm text-zinc-400 space-y-1 list-disc pl-5">
           <li>At least {PASSWORD_MIN} characters</li>
           <li>Must be different from your current password</li>
           <li>Other sessions will be signed out after a successful change</li>
@@ -477,61 +468,63 @@ export function SettingsSecurityPage() {
             Change Password
           </Button>
         </Form>
-      </Card>
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Two-Factor Authentication</h2>
-        <p className="text-zinc-400 mb-4">Add an extra layer of security to your account by enabling two-factor authentication.</p>
+      </SettingsSection>
+      <SettingsSection
+        title="Two-Factor Authentication"
+        description="Add an extra layer of security to your account by enabling two-factor authentication."
+      >
         <Button variant="secondary" disabled>
           <Shield className="w-5 h-5" />
           Enable 2FA (Coming Soon)
         </Button>
-      </Card>
+      </SettingsSection>
     </div>
   );
 }
 
 export function SettingsNotificationsPage() {
   return (
-    <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-6">Notification Preferences</h2>
-      <div className="space-y-4">
+    <SettingsSection
+      title="Notification Preferences"
+      description="Choose which campaign emails you want. These options are not live yet."
+    >
+      <div>
         {[
           { id: 'email_entries', label: 'New entries', description: 'Get notified when someone enters your campaign' },
           { id: 'email_milestones', label: 'Milestones', description: 'Celebrate when you hit entry milestones' },
           { id: 'email_campaign_end', label: 'Campaign ending', description: 'Reminder when your campaign is about to end' },
           { id: 'email_winner', label: 'Winner selection', description: 'Get notified when winners are selected' },
         ].map((item) => (
-          <div key={item.id} className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/50 border border-zinc-700">
-            <div>
+          <div key={item.id} className="settings-pref">
+            <div className="min-w-0">
               <p className="font-medium">{item.label}</p>
-              <p className="text-sm text-zinc-400">{item.description}</p>
+              <p className="text-sm text-zinc-400 mt-0.5">{item.description}</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0">
               <span className="text-xs text-zinc-500">Coming Soon</span>
               <Checkbox isDisabled aria-label={item.label} />
             </div>
           </div>
         ))}
       </div>
-    </Card>
+    </SettingsSection>
   );
 }
 
 export function SettingsAppearancePage() {
   const { preference, setPreference, resolved } = useTheme();
   const options: { id: ThemePreference; label: string; preview: string }[] = [
-    { id: 'dark', label: 'Dark', preview: 'bg-zinc-900' },
-    { id: 'light', label: 'Light', preview: 'bg-white' },
-    { id: 'system', label: 'System', preview: 'bg-gradient-to-r from-zinc-900 to-white' },
+    { id: 'dark', label: 'Dark', preview: 'bg-[#09090b]' },
+    { id: 'light', label: 'Light', preview: 'bg-[#fafafa]' },
+    { id: 'system', label: 'System', preview: 'bg-gradient-to-r from-[#09090b] to-[#fafafa]' },
   ];
 
   return (
-    <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-2">Appearance</h2>
-      <p className="text-sm text-zinc-500 mb-6">
-        Currently {resolved} mode. This follows your PromoApp theme preference on this device.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <SettingsSection
+      title="Appearance"
+      description={`Currently ${resolved} mode. This follows your PromoApp theme preference on this device.`}
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {options.map((theme) => (
           <button
             key={theme.id}
@@ -539,18 +532,14 @@ export function SettingsAppearancePage() {
             onClick={() => setPreference(theme.id)}
             aria-pressed={preference === theme.id}
             data-testid={`theme-${theme.id}`}
-            className={`p-4 rounded-xl border-2 text-left transition-all ${
-              preference === theme.id
-                ? 'border-primary-500 bg-primary-500/10'
-                : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-500'
-            }`}
+            className={preference === theme.id ? 'settings-theme is-selected' : 'settings-theme'}
           >
-            <div className={`h-16 rounded-lg ${theme.preview} mb-2 border border-zinc-700`} />
+            <div className={`h-16 rounded-md ${theme.preview} mb-2.5 border border-zinc-800`} />
             <span className="text-sm font-medium">{theme.label}</span>
           </button>
         ))}
       </div>
-    </Card>
+    </SettingsSection>
   );
 }
 
@@ -579,14 +568,15 @@ export function SettingsDeleteAccountPage() {
   });
 
   return (
-    <Card className="p-6 space-y-4 border-red-500/30" data-testid="danger-zone">
-      <h2 className="text-xl font-semibold text-red-400">Danger Zone</h2>
-      <p className="text-sm text-zinc-400">
-        Destructive actions can result in unrecoverable data loss.
-      </p>
-      <div className="rounded-xl border border-red-500/25 bg-red-500/5 p-4 space-y-3">
+    <SettingsSection
+      title="Danger Zone"
+      description="Destructive actions can result in unrecoverable data loss."
+      danger
+      data-testid="danger-zone"
+    >
+      <div className="space-y-4">
         <h3 className="font-semibold text-red-300">Delete Account</h3>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-zinc-400 max-w-2xl">
           This deletes your personal account only. Workspaces you do not own are left intact.
           If you are the only owner of a workspace, transfer ownership or delete that workspace first.
           Campaigns, billing, and teammates in those workspaces are not cascade-deleted.
@@ -666,6 +656,6 @@ export function SettingsDeleteAccountPage() {
           />
         </div>
       </Modal>
-    </Card>
+    </SettingsSection>
   );
 }

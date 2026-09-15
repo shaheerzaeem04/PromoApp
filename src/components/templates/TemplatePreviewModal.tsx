@@ -250,7 +250,7 @@ export function TemplatePreviewModal({ template, onClose }: TemplatePreviewModal
         className="preview-glass-panel relative z-[1] flex h-full min-h-0 w-full flex-col overflow-hidden"
         {...panelMotion}
       >
-        <header className="preview-glass-chrome flex shrink-0 items-center gap-3 border-b border-white/10 px-3 py-2.5 sm:px-4">
+        <header className="preview-glass-chrome flex shrink-0 items-center gap-3 border-b border-zinc-800/60 px-3 py-2.5 sm:px-4">
           <Button ref={closeRef} variant="ghost" size="sm" onClick={onClose} data-testid="template-preview-close">
             <X className="h-4 w-4" />
             <span className="hidden sm:inline">Close</span>
@@ -292,7 +292,7 @@ export function TemplatePreviewModal({ template, onClose }: TemplatePreviewModal
         </header>
 
         {renderable && (
-          <div className="preview-glass-chrome flex shrink-0 flex-wrap items-center justify-center gap-2 border-b border-white/10 px-3 py-2">
+          <div className="preview-glass-chrome flex shrink-0 flex-wrap items-center justify-center gap-2 border-b border-zinc-800/60 px-3 py-2">
             <SegmentedGroup label="Preview screen">
               {SCREENS.map((item) => (
                 <SegmentedButton

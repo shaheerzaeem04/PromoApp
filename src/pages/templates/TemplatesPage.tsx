@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 import type { Selection } from 'react-aria-components';
-import { PageSpinner, EmptyState, SearchField, TagGroup, TagList, Tag } from '../../components/ui';
+import { PageHeader, PageSpinner, EmptyState, SearchField, TagGroup, TagList, Tag } from '../../components/ui';
 import { templateApi } from '../../services/api';
 import { TemplateCard } from '../../components/templates/TemplateCard';
 import { TemplatePreviewModal } from '../../components/templates/TemplatePreviewModal';
@@ -52,18 +52,10 @@ export function TemplatesPage() {
 
   return (
     <div className="space-y-8 max-w-7xl">
-      <header className="dash-hero p-6 md:p-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-400">
-          Library
-        </p>
-        <h1 className="font-display text-3xl md:text-[2.35rem] text-zinc-50 mt-2 leading-tight">
-          Giveaway Templates
-        </h1>
-        <p className="page-desc mt-2 max-w-2xl">
-          Create engaging giveaways faster with pre-built campaigns. Preview a realistic setup, then
-          open the full builder with everything prefilled.
-        </p>
-      </header>
+      <PageHeader
+        title="Giveaway Templates"
+        description="Start from a pre-built campaign, preview the setup, then open the builder with everything filled in."
+      />
 
       <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
         <SearchField

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Card, Button, PageSpinner } from '../../components/ui';
+import { Button, PageSpinner } from '../../components/ui';
+import { SettingsSection } from './SettingsSection';
 import { billingApi, planLimitMessage, workspaceApi } from '../../services/api';
 
 function pct(used: number, limit: number | null) {
@@ -22,14 +23,14 @@ function Meter({
   const percent = pct(used, limit);
   const remaining = limit === null ? null : Math.max(0, limit - used);
   return (
-    <div className="space-y-2 py-4 border-b border-zinc-800 last:border-0">
+    <div className="space-y-2 py-4 border-b border-zinc-800/50 last:border-0">
       <div className="flex justify-between gap-3 text-sm">
         <span className="font-medium">{label}</span>
-        <span>
+        <span className="tabular-nums">
           {used} / {limit === null ? '∞' : limit}
         </span>
       </div>
-      <div className="h-2 rounded-full bg-zinc-800 overflow-hidden" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+      <div className="settings-meter-track" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
         <div className="h-full bg-primary-500 transition-all" style={{ width: `${limit === null ? 0 : percent}%` }} />
       </div>
       <div className="flex flex-wrap gap-4 text-xs text-zinc-500">
@@ -70,7 +71,7 @@ export function SettingsUsagePage() {
 
   if (entitlements.isLoading || current.isLoading) return <PageSpinner />;
   if (entitlements.isError || !entitlements.data) {
-    return <Card className="p-6 text-red-400">Could not load usage.</Card>;
+    return <p className="text-sm text-red-400">Could not load usage.</p>;
   }
 
   const usage = entitlements.data.usage;
@@ -83,53 +84,52 @@ export function SettingsUsagePage() {
   const avgPerDay = Math.round((usage.monthlyParticipants / daysElapsed) * 100) / 100;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold">Usage</h2>
-        <p className="text-zinc-400 mt-1">Track your current usage and limits from live workspace entitlements.</p>
-      </div>
-
-      <Card className="p-6 space-y-2">
-        <h3 className="text-lg font-semibold">This period&apos;s usage</h3>
-        <p className="text-sm text-zinc-500">
-          {periodFrom && periodTo
+    <div>
+      <SettingsSection
+        title="This period's usage"
+        description={
+          periodFrom && periodTo
             ? `${periodFrom.toLocaleDateString()} → ${periodTo.toLocaleDateString()}`
-            : 'Billing period derived from subscription when available.'}
-        </p>
-        <Meter
-          label="Entries / participants used"
-          used={usage.monthlyParticipants}
-          limit={usage.limits.maxMonthlyParticipants}
-          hint={`Avg ${avgPerDay}/day · Resets ${periodTo ? periodTo.toLocaleDateString() : '—'}`}
-        />
-        <Meter label="Custom domains used" used={usage.customDomains} limit={usage.limits.maxCustomDomains} />
-        <Meter
-          label="Team members used"
-          used={usage.teamSeats}
-          limit={usage.limits.maxTeamMembers}
-          hint={`${usage.pendingInvites || 0} pending invite(s) count toward seats`}
-        />
-        <Meter label="Campaigns created" used={usage.campaignsCreated} limit={usage.limits.maxCampaigns} />
-        <Meter label="Active campaigns" used={usage.activeCampaigns} limit={usage.limits.maxActiveCampaigns} />
-        <Meter label="Integrations" used={usage.integrations} limit={usage.limits.maxIntegrations} />
-        <p className="text-sm text-zinc-400 pt-2">
+            : 'Billing period derived from subscription when available.'
+        }
+      >
+        <div>
+          <Meter
+            label="Entries / participants used"
+            used={usage.monthlyParticipants}
+            limit={usage.limits.maxMonthlyParticipants}
+            hint={`Avg ${avgPerDay}/day · Resets ${periodTo ? periodTo.toLocaleDateString() : '—'}`}
+          />
+          <Meter label="Custom domains used" used={usage.customDomains} limit={usage.limits.maxCustomDomains} />
+          <Meter
+            label="Team members used"
+            used={usage.teamSeats}
+            limit={usage.limits.maxTeamMembers}
+            hint={`${usage.pendingInvites || 0} pending invite(s) count toward seats`}
+          />
+          <Meter label="Campaigns created" used={usage.campaignsCreated} limit={usage.limits.maxCampaigns} />
+          <Meter label="Active campaigns" used={usage.activeCampaigns} limit={usage.limits.maxActiveCampaigns} />
+          <Meter label="Integrations" used={usage.integrations} limit={usage.limits.maxIntegrations} />
+        </div>
+        <p className="text-sm text-zinc-400">
           PromoApp enforces plan limits server-side when creating campaigns, inviting members, adding domains, and
           connecting integrations. Public entry acceptance follows existing campaign/entry engines — this page does not
           invent alternate limit behavior.
         </p>
-      </Card>
+      </SettingsSection>
 
-      <Card className="p-6 space-y-4">
-        <h3 className="text-lg font-semibold">Purchase add-ons</h3>
-        <p className="text-sm text-zinc-400">
-          Prices and Checkout use PromoApp Stripe configuration. Buttons stay disabled until a Stripe Price ID is set.
-        </p>
+      <SettingsSection
+        title="Purchase add-ons"
+        description="Prices and Checkout use PromoApp Stripe configuration. Buttons stay disabled until a Stripe Price ID is set."
+      >
         {!canBill && <p className="text-sm text-zinc-500">Only the workspace owner can purchase add-ons.</p>}
-        <div className="grid md:grid-cols-3 gap-4">
+        <div>
           {(addons.data || []).filter((a: any) => a.key !== 'BUNDLE').map((addon: any) => (
-            <div key={addon.key} className="border border-zinc-800 rounded-xl p-4 space-y-3">
-              <h4 className="font-semibold">{addon.name}</h4>
-              <p className="text-sm text-zinc-400">{addon.description}</p>
+            <div key={addon.key} className="settings-row">
+              <div className="min-w-0">
+                <h4 className="font-semibold">{addon.name}</h4>
+                <p className="text-sm text-zinc-400 mt-0.5">{addon.description}</p>
+              </div>
               {addon.configured ? (
                 <Button
                   disabled={!canBill}
@@ -145,10 +145,10 @@ export function SettingsUsagePage() {
           ))}
         </div>
         {(addons.data || []).filter((a: any) => a.key === 'BUNDLE').map((addon: any) => (
-          <div key={addon.key} className="border border-primary-500/30 bg-primary-500/5 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div>
+          <div key={addon.key} className="settings-row">
+            <div className="min-w-0">
               <h4 className="font-semibold">{addon.name}</h4>
-              <p className="text-sm text-zinc-400">{addon.description}</p>
+              <p className="text-sm text-zinc-400 mt-0.5">{addon.description}</p>
             </div>
             {addon.configured ? (
               <Button disabled={!canBill} loading={checkout.isPending} onClick={() => checkout.mutate(addon.key)}>
@@ -174,7 +174,7 @@ export function SettingsUsagePage() {
             Refresh usage
           </Button>
         )}
-      </Card>
+      </SettingsSection>
     </div>
   );
 }

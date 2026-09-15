@@ -36,12 +36,7 @@ function NavItem({ to, label, icon: Icon }: { to: string; label: string; icon: t
     <NavLink
       to={to}
       className={({ isActive }) =>
-        cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all',
-          isActive
-            ? 'bg-primary-500/10 text-primary-400'
-            : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50'
-        )
+        cn('sidebar-link w-full', isActive && 'sidebar-link--active')
       }
     >
       <Icon className="w-4 h-4 shrink-0" />
@@ -73,7 +68,7 @@ export function SettingsLayout() {
           <label className="lg:hidden block">
             <span className="sr-only">Settings section</span>
             <select
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-sm"
+              className="input"
               aria-label="Settings section"
               value={current}
               onChange={(event) => navigate(event.target.value)}

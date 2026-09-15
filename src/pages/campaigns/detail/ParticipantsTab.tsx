@@ -82,7 +82,7 @@ export function ParticipantsTab({ campaignId }: { campaignId: string }) {
                 {rows.map((row: any) => (
                   <tr
                     key={row.id}
-                    className="hover:bg-zinc-800/40 cursor-pointer"
+                    className="cursor-pointer"
                     onClick={() => setSelected(row)}
                   >
                     <td className="p-4">{row.name || '—'}</td>

@@ -48,8 +48,28 @@ export function PlanPicker({
   return (
     <div className="space-y-6">
       <div className="flex gap-2">
-        <button type="button" className={`px-3 py-1.5 rounded-lg ${interval === 'MONTHLY' ? 'bg-primary-500/20 text-primary-300' : 'text-zinc-400'}`} onClick={() => setInterval('MONTHLY')}>Monthly</button>
-        <button type="button" className={`px-3 py-1.5 rounded-lg ${interval === 'ANNUAL' ? 'bg-primary-500/20 text-primary-300' : 'text-zinc-400'}`} onClick={() => setInterval('ANNUAL')}>Annual</button>
+        <button
+          type="button"
+          className={`px-1 py-1.5 text-sm border-b-2 transition-colors ${
+            interval === 'MONTHLY'
+              ? 'border-primary-500 text-zinc-50'
+              : 'border-transparent text-zinc-400 hover:text-zinc-200'
+          }`}
+          onClick={() => setInterval('MONTHLY')}
+        >
+          Monthly
+        </button>
+        <button
+          type="button"
+          className={`px-1 py-1.5 text-sm border-b-2 transition-colors ${
+            interval === 'ANNUAL'
+              ? 'border-primary-500 text-zinc-50'
+              : 'border-transparent text-zinc-400 hover:text-zinc-200'
+          }`}
+          onClick={() => setInterval('ANNUAL')}
+        >
+          Annual
+        </button>
       </div>
       <div className="grid md:grid-cols-3 gap-4">
         {paid.map((plan) => {

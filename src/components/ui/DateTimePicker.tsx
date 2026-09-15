@@ -185,13 +185,13 @@ export function DateTimePicker({
           id={`${inputId}-popover`}
           role="dialog"
           aria-label={label || 'Choose date and time'}
-          className="fixed z-[120] rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl shadow-black/50 p-3"
+          className="fixed z-[120] ui-menu-popover p-3"
           style={{ top: coords.top, left: coords.left, width: coords.width }}
         >
           <div className="flex items-center justify-between mb-3">
             <button
               type="button"
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+              className="icon-quiet h-8 w-8"
               onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
               aria-label="Previous month"
             >
@@ -202,7 +202,7 @@ export function DateTimePicker({
             </p>
             <button
               type="button"
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+              className="icon-quiet h-8 w-8"
               onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
               aria-label="Next month"
             >
@@ -227,7 +227,7 @@ export function DateTimePicker({
                     'h-8 rounded-lg text-sm transition-colors',
                     active && 'bg-primary-500 text-zinc-950 font-medium',
                     !active && today && 'text-primary-300',
-                    !active && !today && 'text-zinc-200 hover:bg-zinc-800'
+                    !active && !today && 'text-zinc-200 hover:bg-primary-500/10'
                   )}
                 >
                   {day.getDate()}

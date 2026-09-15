@@ -113,8 +113,8 @@ export function Sidebar() {
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
-            'ml-auto p-1.5 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800 rounded-md transition-all hidden lg:inline-flex',
-            collapsed && 'absolute left-12 bg-zinc-800'
+            'icon-quiet ml-auto h-8 w-8 text-zinc-500 hidden lg:inline-flex',
+            collapsed && 'absolute left-12 bg-zinc-900'
           )}
         >
           <ChevronLeft className={cn('w-4 h-4 transition-transform', collapsed && 'rotate-180')} />
@@ -239,7 +239,7 @@ export function Sidebar() {
         <MenuIcon className="w-5 h-5" />
       </button>
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-black/60" onClick={() => setMobileOpen(false)} aria-hidden="true" />
+        <div className="lg:hidden fixed inset-0 z-40 ui-modal-backdrop" onClick={() => setMobileOpen(false)} aria-hidden="true" />
       )}
       <aside
         ref={sidebarRef}

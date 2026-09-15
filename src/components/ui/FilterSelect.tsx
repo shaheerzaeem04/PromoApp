@@ -11,7 +11,7 @@ export type FilterSelectOption = {
   dotClassName?: string;
 };
 
-const DEFAULT_DOT = 'bg-primary-400 shadow-[0_0_8px_rgba(45,212,191,0.45)]';
+const DEFAULT_DOT = 'bg-primary-400';
 
 type FilterSelectProps = {
   options: FilterSelectOption[];
@@ -65,12 +65,8 @@ export function FilterSelect({
         aria-label={ariaLabel}
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          'w-full h-11 px-3.5 rounded-xl text-sm text-left flex items-center gap-2.5',
-          'bg-zinc-900/50 border transition-[border-color,background-color,box-shadow,color] duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-primary-500/40',
-          open
-            ? 'border-primary-500/70 ring-2 ring-primary-500/25 text-zinc-50 shadow-[0_0_0_1px_rgba(20,184,166,0.18)]'
-            : 'border-primary-500/25 text-zinc-200 hover:border-primary-500/50 hover:bg-zinc-900/70'
+          'ui-filter-select-trigger',
+          open && 'text-zinc-50'
         )}
       >
         <span className={cn('w-2 h-2 rounded-full shrink-0', selected.dotClassName || DEFAULT_DOT)} />
@@ -92,13 +88,7 @@ export function FilterSelect({
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
             transition={{ duration: reduceMotion ? 0.12 : 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className={cn(
-              'absolute z-50 mt-2 w-full overflow-hidden origin-top',
-              'rounded-xl border border-primary-500/35',
-              'bg-zinc-900',
-              'shadow-xl shadow-black/40 ring-1 ring-primary-500/15',
-              listClassName
-            )}
+            className={cn('ui-menu-popover absolute z-50 mt-2 w-full', listClassName)}
           >
             <div className="p-1.5 space-y-0.5 max-h-72 overflow-y-auto">
               {options.map((option) => {
@@ -114,9 +104,10 @@ export function FilterSelect({
                       setOpen(false);
                     }}
                     className={cn(
-                      'w-full flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150',
+                      'w-full flex items-start gap-2.5 px-2.5 py-2 text-left rounded-md',
+                      'transition-[background-color,color] duration-150',
                       active
-                        ? 'bg-primary-500/15 text-zinc-50'
+                        ? 'bg-primary-500/12 text-zinc-50'
                         : 'text-zinc-300 hover:bg-primary-500/10 hover:text-zinc-50'
                     )}
                   >

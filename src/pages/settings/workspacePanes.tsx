@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Card, Button, Input } from '../../components/ui';
+import { Button, Input } from '../../components/ui';
+import { SettingsSection } from './SettingsSection';
 import { billingApi, planLimitMessage, workspaceApi } from '../../services/api';
 import { PlanPicker } from '../../components/billing/PlanPicker';
 
@@ -83,64 +84,69 @@ export function BillingPane() {
   const view = resolveBillingView(current, billing, plans);
 
   if (view.type === 'loading') {
-    return <Card className="p-6 text-zinc-400" data-testid="billing-loading">Loading billing…</Card>;
+    return <p className="text-sm text-zinc-400" data-testid="billing-loading">Loading billing…</p>;
   }
   if (view.type === 'error') {
     return (
-      <Card className="p-6 space-y-3" data-testid="billing-error">
+      <SettingsSection title="Billing" data-testid="billing-error">
         <p className="text-red-400">Unable to load billing information.</p>
         <Button onClick={() => retry()}>Retry</Button>
-      </Card>
+      </SettingsSection>
     );
   }
   if (view.type === 'permission') {
-    return <Card className="p-6 text-zinc-400" data-testid="billing-permission">Only the workspace owner can manage billing.</Card>;
+    return (
+      <p className="text-sm text-zinc-400" data-testid="billing-permission">
+        Only the workspace owner can manage billing.
+      </p>
+    );
   }
   if (view.type === 'verify') {
     return (
-      <Card className="p-6 space-y-3" data-testid="billing-verify">
-        <h2 className="text-xl font-semibold">Verify your email</h2>
-        <p className="text-zinc-400">Verify your email before starting a trial.</p>
-      </Card>
+      <SettingsSection
+        title="Verify your email"
+        description="Verify your email before starting a trial."
+        data-testid="billing-verify"
+      />
     );
   }
   if (view.type === 'unconfigured') {
     return (
-      <Card className="p-6 space-y-3" data-testid="billing-unconfigured">
-        <h2 className="text-xl font-semibold">Billing</h2>
-        <p className="text-zinc-400">{view.message}</p>
-      </Card>
+      <SettingsSection title="Billing" description={view.message} data-testid="billing-unconfigured" />
     );
   }
   if (view.type === 'no_plan') {
     return (
-      <div className="space-y-6" data-testid="billing-no-plan">
-        <Card className="p-6 space-y-2">
-          <h2 className="text-xl font-semibold">No plan</h2>
-          <p className="text-zinc-400">Choose a plan to start your 7-day free trial.</p>
-        </Card>
-        <PlanPicker
-          plans={view.plans}
-          configured={Boolean(view.data.stripeConfigured)}
-          configurationMessage={view.data.environmentUnconfiguredMessage}
-        />
+      <div data-testid="billing-no-plan">
+        <SettingsSection title="No plan" description="Choose a plan to start your 7-day free trial." />
+        <div className="mt-8">
+          <PlanPicker
+            plans={view.plans}
+            configured={Boolean(view.data.stripeConfigured)}
+            configurationMessage={view.data.environmentUnconfiguredMessage}
+          />
+        </div>
       </div>
     );
   }
 
   const { data, lifecycle } = view;
   return (
-    <div className="space-y-6" data-testid={`billing-state-${lifecycle}`}>
-      <Card className="p-6 space-y-3">
-        <h2 className="text-xl font-semibold">{data.planName || data.selectedPlanKey}</h2>
-        <p className="text-zinc-400 text-sm" data-testid="billing-lifecycle">{lifecycle}</p>
-        <p className="text-zinc-400 text-sm">
-          Status: {data.status}
-          {data.billingInterval ? ` · ${data.billingInterval.toLowerCase()}` : ''}
-          {lifecycle === 'TRIALING' && data.trialEndsAt ? ` · trial ends ${new Date(data.trialEndsAt).toLocaleDateString()}` : ''}
-          {data.currentPeriodEnd ? ` · period ends ${new Date(data.currentPeriodEnd).toLocaleDateString()}` : ''}
-          {typeof data.daysRemaining === 'number' ? ` · ${data.daysRemaining} days remaining` : ''}
-        </p>
+    <div data-testid={`billing-state-${lifecycle}`}>
+      <SettingsSection
+        title={data.planName || data.selectedPlanKey}
+        description={
+          <>
+            <span data-testid="billing-lifecycle">{lifecycle}</span>
+            {' · '}
+            Status: {data.status}
+            {data.billingInterval ? ` · ${data.billingInterval.toLowerCase()}` : ''}
+            {lifecycle === 'TRIALING' && data.trialEndsAt ? ` · trial ends ${new Date(data.trialEndsAt).toLocaleDateString()}` : ''}
+            {data.currentPeriodEnd ? ` · period ends ${new Date(data.currentPeriodEnd).toLocaleDateString()}` : ''}
+            {typeof data.daysRemaining === 'number' ? ` · ${data.daysRemaining} days remaining` : ''}
+          </>
+        }
+      >
         {lifecycle === 'TRIALING' && <p className="text-sm text-zinc-300">No charge today. Your selected plan will renew automatically after the 7-day trial unless you cancel.</p>}
         {lifecycle === 'PAST_DUE' && <p className="text-amber-400 text-sm">Payment failed. Update your payment method to keep this plan after the grace period. Existing campaigns are not deleted.</p>}
         {lifecycle === 'UNPAID' && <p className="text-amber-400 text-sm">This workspace is restricted until billing is restored. Existing data is kept.</p>}
@@ -151,27 +157,30 @@ export function BillingPane() {
             {lifecycle === 'PAST_DUE' ? 'Update Payment Method' : lifecycle === 'TRIALING' ? 'Cancel Trial / Manage Subscription' : 'Manage Billing'}
           </Button>
         )}
-      </Card>
-      <Card className="p-6">
-        <h3 className="font-semibold mb-3">Usage snapshot</h3>
-        <p className="text-sm text-zinc-500 mb-3">
-          Full meters live under Settings → Usage. Limits below come from the live billing summary.
-        </p>
-        <UsageRow label="Campaigns" used={data.usage.campaignsCreated} limit={data.usage.limits.maxCampaigns} />
-        <UsageRow label="Active campaigns" used={data.usage.activeCampaigns} limit={data.usage.limits.maxActiveCampaigns} />
-        <UsageRow label="Seats" used={data.usage.teamSeats} limit={data.usage.limits.maxTeamMembers} />
-        <UsageRow label="Participants this period" used={data.usage.monthlyParticipants} limit={data.usage.limits.maxMonthlyParticipants} />
-        <UsageRow label="Custom domains" used={data.usage.customDomains} limit={data.usage.limits.maxCustomDomains} />
-      </Card>
+      </SettingsSection>
+      <SettingsSection
+        title="Usage snapshot"
+        description="Full meters live under Settings → Usage. Limits below come from the live billing summary."
+      >
+        <div>
+          <UsageRow label="Campaigns" used={data.usage.campaignsCreated} limit={data.usage.limits.maxCampaigns} />
+          <UsageRow label="Active campaigns" used={data.usage.activeCampaigns} limit={data.usage.limits.maxActiveCampaigns} />
+          <UsageRow label="Seats" used={data.usage.teamSeats} limit={data.usage.limits.maxTeamMembers} />
+          <UsageRow label="Participants this period" used={data.usage.monthlyParticipants} limit={data.usage.limits.maxMonthlyParticipants} />
+          <UsageRow label="Custom domains" used={data.usage.customDomains} limit={data.usage.limits.maxCustomDomains} />
+        </div>
+      </SettingsSection>
     </div>
   );
 }
 
 function UsageRow({ label, used, limit }: { label: string; used: number; limit: number | null }) {
   return (
-    <div className="flex justify-between py-2 border-b border-zinc-800 last:border-0 text-sm">
-      <span className="text-zinc-400">{label}</span>
-      <span>{used} / {limit === null ? '∞' : limit}</span>
+    <div className="settings-pref">
+      <span className="text-sm text-zinc-400">{label}</span>
+      <span className="text-sm tabular-nums">
+        {used} / {limit === null ? '∞' : limit}
+      </span>
     </div>
   );
 }
@@ -211,41 +220,40 @@ export function ApiPane() {
   });
 
   if (entitlements.isLoading) {
-    return (
-      <Card className="p-6 space-y-4">
-        <div className="h-6 w-32 bg-zinc-800 rounded animate-pulse" />
-        <div className="h-16 w-full bg-zinc-800 rounded animate-pulse" />
-      </Card>
-    );
+    return <p className="text-sm text-zinc-400">Loading API keys…</p>;
   }
   if (entitlements.isError) {
-    return <Card className="p-6 text-zinc-400">Couldn't load plan info. Try refreshing the page.</Card>;
+    return <p className="text-sm text-zinc-400">Couldn't load plan info. Try refreshing the page.</p>;
   }
   if (!apiEnabled) {
-    return <Card className="p-6 text-zinc-400">Public API keys are available on the Premium plan.</Card>;
+    return (
+      <SettingsSection
+        title="Team API keys"
+        description="Public API keys are available on the Premium plan."
+      />
+    );
   }
 
   return (
-    <Card className="p-6 space-y-4">
-      <h2 className="text-xl font-semibold">Team API keys</h2>
-      <p className="text-sm text-zinc-400">
-        Full keys are shown once. Prefix and last used remain visible. Versioned routes live under /api/v1.
-      </p>
-      {revealed && (
-        <p className="font-mono text-sm break-all bg-zinc-950 border border-zinc-800 rounded-xl p-3">{revealed}</p>
-      )}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <Input label="Key name" value={name} onChange={(e) => setName(e.target.value)} />
-        <Button className="sm:self-end" onClick={() => create.mutate()} loading={create.isPending}>
+    <SettingsSection
+      title="Team API keys"
+      description="Full keys are shown once. Prefix and last used remain visible. Versioned routes live under /api/v1."
+    >
+      {revealed && <p className="settings-secret">{revealed}</p>}
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+        <div className="flex-1 min-w-0">
+          <Input label="Key name" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <Button onClick={() => create.mutate()} loading={create.isPending}>
           Create key
         </Button>
       </div>
-      <div className="space-y-2">
+      <div>
         {(keys.data || []).map((key: any) => (
-          <div key={key.id} className="flex flex-wrap items-center justify-between gap-2 border border-zinc-800 rounded-xl p-3 text-sm">
+          <div key={key.id} className="settings-row">
             <div>
               <p className="font-medium">{key.name}</p>
-              <p className="text-zinc-500">
+              <p className="text-sm text-zinc-500">
                 {key.keyPrefix}… {key.revokedAt ? 'revoked' : `last used ${key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleString() : 'never'}`}
               </p>
             </div>
@@ -255,7 +263,7 @@ export function ApiPane() {
           </div>
         ))}
       </div>
-    </Card>
+    </SettingsSection>
   );
 }
 

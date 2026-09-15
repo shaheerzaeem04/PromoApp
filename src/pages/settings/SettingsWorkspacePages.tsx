@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Card, Button, Input, Modal, Badge, Checkbox } from '../../components/ui';
+import { Button, Input, Modal, Badge, Checkbox } from '../../components/ui';
+import { SettingsSection } from './SettingsSection';
 import { planLimitMessage, workspaceApi } from '../../services/api';
 
 const FRONTEND_ORIGIN = typeof window !== 'undefined' ? window.location.origin : '';
@@ -93,19 +94,18 @@ export function SettingsGeneralPage() {
   };
 
   if (isLoading || !data) {
-    return <Card className="p-6 text-zinc-400">Loading workspace…</Card>;
+    return <p className="text-sm text-zinc-400">Loading workspace…</p>;
   }
 
   const canUpdate = Boolean(data.permissions?.update);
   const isOwner = data.role === 'OWNER';
 
   return (
-    <div className="space-y-6">
-      <Card className="p-6 space-y-4">
-        <h2 className="text-xl font-semibold">Brand / workspace name</h2>
-        <p className="text-sm text-zinc-400">
-          This is the public name of your workspace. It appears in invitations and billing emails.
-        </p>
+    <div>
+      <SettingsSection
+        title="Brand / workspace name"
+        description="This is the public name of your workspace. It appears in invitations and billing emails."
+      >
         <Input
           label="Name"
           value={name}
@@ -119,17 +119,20 @@ export function SettingsGeneralPage() {
             Save Changes
           </Button>
         )}
-      </Card>
+      </SettingsSection>
 
-      <Card className="p-6 space-y-4">
-        <h2 className="text-xl font-semibold">Workspace slug</h2>
-        <p className="text-sm text-zinc-400">
-          Lowercase letters, numbers, and hyphens only. Used in workspace URLs such as{' '}
-          <span className="font-mono text-zinc-300">
-            {FRONTEND_ORIGIN}/brand/{slug || 'your-slug'}
-          </span>
-          . Campaign public links continue to use campaign slugs.
-        </p>
+      <SettingsSection
+        title="Workspace slug"
+        description={
+          <>
+            Lowercase letters, numbers, and hyphens only. Used in workspace URLs such as{' '}
+            <span className="font-mono text-zinc-300">
+              {FRONTEND_ORIGIN}/brand/{slug || 'your-slug'}
+            </span>
+            . Campaign public links continue to use campaign slugs.
+          </>
+        }
+      >
         <Input
           label="Slug"
           value={slug}
@@ -141,11 +144,9 @@ export function SettingsGeneralPage() {
             Save slug
           </Button>
         )}
-      </Card>
+      </SettingsSection>
 
-      <Card className="p-6 space-y-4">
-        <h2 className="text-xl font-semibold">Logo</h2>
-        <p className="text-sm text-zinc-400">Recommended ~200×200. Max 2MB. JPEG, PNG, GIF, or WebP.</p>
+      <SettingsSection title="Logo" description="Recommended ~200×200. Max 2MB. JPEG, PNG, GIF, or WebP.">
         {logoPreview && (
           <img src={logoPreview} alt="Workspace logo" className="w-24 h-24 rounded-xl object-cover border border-zinc-800" />
         )}
@@ -169,7 +170,7 @@ export function SettingsGeneralPage() {
           </div>
         )}
         <div
-          className="border border-dashed border-zinc-700 rounded-xl p-6 text-center text-sm text-zinc-500"
+          className="settings-dropzone"
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault();
@@ -179,22 +180,21 @@ export function SettingsGeneralPage() {
         >
           Drag and drop an image here
         </div>
-      </Card>
+      </SettingsSection>
 
-      <Card className="p-6 space-y-4">
-        <h2 className="text-xl font-semibold">Custom domains</h2>
-        <p className="text-sm text-zinc-400">
-          Domains are verified per campaign. Status below is read from live CustomDomain records — never faked.
-        </p>
+      <SettingsSection
+        title="Custom domains"
+        description="Domains are verified per campaign. Status below is read from live CustomDomain records — never faked."
+      >
         {(domains.data || []).length === 0 ? (
           <p className="text-sm text-zinc-500">No custom domains yet. Add one from a campaign’s Embed tab.</p>
         ) : (
-          <ul className="space-y-2 text-sm">
+          <ul>
             {(domains.data || []).map((row: any) => (
-              <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 py-2">
+              <li key={row.id} className="settings-row">
                 <div>
                   <p className="font-medium">{row.hostname}</p>
-                  <p className="text-zinc-500">{row.campaignTitle}</p>
+                  <p className="text-sm text-zinc-500">{row.campaignTitle}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={row.status === 'VERIFIED' ? 'success' : row.status === 'FAILED' ? 'danger' : 'warning'}>
@@ -208,38 +208,38 @@ export function SettingsGeneralPage() {
             ))}
           </ul>
         )}
-      </Card>
+      </SettingsSection>
 
       <div id="danger">
-      <Card className="p-6 space-y-4">
-        <h2 className="text-xl font-semibold text-red-400">Delete workspace</h2>
-        {!isOwner ? (
-          <p className="text-sm text-zinc-400">Only the owner can delete this workspace.</p>
-        ) : (
-          <>
-            <p className="text-sm text-zinc-400">
-              Permanent soft-delete after confirmation. Campaigns, participants, API keys, domains, and integrations are
-              disabled immediately and purged after the retention window. Active Stripe subscriptions cancel at period end.
-            </p>
-            <Checkbox
-              isSelected={ackDelete}
-              onChange={setAckDelete}
-            >
-              I understand that this action is irreversible
-            </Checkbox>
-            <Button variant="danger" disabled={!ackDelete} onClick={() => setShowDeleteModal(true)}>
-              Delete workspace
-            </Button>
-          </>
-        )}
-      </Card>
+        <SettingsSection
+          title="Delete workspace"
+          danger
+          description={
+            isOwner
+              ? 'Permanent soft-delete after confirmation. Campaigns, participants, API keys, domains, and integrations are disabled immediately and purged after the retention window. Active Stripe subscriptions cancel at period end.'
+              : 'Only the owner can delete this workspace.'
+          }
+        >
+          {isOwner ? (
+            <>
+              <Checkbox isSelected={ackDelete} onChange={setAckDelete}>
+                I understand that this action is irreversible
+              </Checkbox>
+              <Button variant="danger" disabled={!ackDelete} onClick={() => setShowDeleteModal(true)}>
+                Delete workspace
+              </Button>
+            </>
+          ) : null}
+        </SettingsSection>
       </div>
 
-      <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Confirm workspace deletion" size="md">
-        <div className="space-y-4">
-          <p className="text-sm text-zinc-400">Type the workspace name <strong className="text-zinc-200">{data.name}</strong> to confirm.</p>
-          <Input label="Workspace name" value={confirmName} onChange={(e) => setConfirmName(e.target.value)} />
-          <div className="flex justify-end gap-2">
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirm workspace deletion"
+        size="md"
+        footer={
+          <>
             <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
             <Button
               variant="danger"
@@ -249,7 +249,14 @@ export function SettingsGeneralPage() {
             >
               Schedule deletion
             </Button>
-          </div>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <p className="text-sm text-zinc-400 leading-relaxed">
+            Type the workspace name <strong className="text-zinc-200 font-medium">{data.name}</strong> to confirm.
+          </p>
+          <Input label="Workspace name" value={confirmName} onChange={(e) => setConfirmName(e.target.value)} />
         </div>
       </Modal>
     </div>
@@ -314,49 +321,46 @@ export function SettingsTeamPage() {
         memberId: null as string | null,
       };
     });
-    return [...members, ...invites];
+    return [...members, ...invites];  
   }, [data]);
 
-  if (!data) return <Card className="p-6 text-zinc-400">Loading team…</Card>;
+  if (!data) return <p className="text-sm text-zinc-400">Loading team…</p>;
 
   return (
-    <div className="space-y-6">
-      <Card className="p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div>
-            <h2 className="text-xl font-semibold">Team Members</h2>
-            <p className="text-sm text-zinc-400">
-              {data.seats.used} / {data.seats.limit ?? '∞'} seats used (members + pending invites)
-            </p>
-          </div>
-          {canInvite && (
+    <div>
+      <SettingsSection
+        title="Team Members"
+        description={`${data.seats.used} / ${data.seats.limit ?? '∞'} seats used (members + pending invites)`}
+        actions={
+          canInvite ? (
             <Button onClick={() => setShowInvite(true)} data-testid="invite-member">
               Invite Member
             </Button>
-          )}
-        </div>
+          ) : undefined
+        }
+      >
         {data.seats.limit && data.seats.used >= data.seats.limit && (
-          <p className="text-amber-400 text-sm mb-4">Seat limit reached. Upgrade or purchase seats to invite more people.</p>
+          <p className="text-amber-400 text-sm">Seat limit reached. Upgrade or purchase seats to invite more people.</p>
         )}
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="ui-table ui-table--page table-auto w-full text-sm">
             <thead>
-              <tr className="text-left text-zinc-400 border-b border-zinc-800">
-                <th className="py-2 pr-3">Name</th>
-                <th className="py-2 pr-3">Email</th>
-                <th className="py-2 pr-3">Role</th>
-                <th className="py-2 pr-3">Status</th>
-                <th className="py-2 pr-3">Expires</th>
-                <th className="py-2 pr-3">Share Link</th>
-                <th className="py-2">Remove</th>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Expires</th>
+                <th>Share Link</th>
+                <th>Remove</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800">
+            <tbody>
               {rows.map((row) => (
                 <tr key={row.key}>
-                  <td className="py-3 pr-3">{row.name}</td>
-                  <td className="py-3 pr-3">{row.email}</td>
-                  <td className="py-3 pr-3">
+                  <td>{row.name}</td>
+                  <td>{row.email}</td>
+                  <td>
                     {canManage && row.kind === 'member' && row.role !== 'OWNER' ? (
                       <select
                         value={row.role}
@@ -368,7 +372,7 @@ export function SettingsTeamPage() {
                             toast.error(planLimitMessage(error) || 'Could not change role');
                           }
                         }}
-                        className="bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-sm"
+                        className="input h-9 py-1 w-auto min-w-[7.5rem]"
                       >
                         <option value="MEMBER">Member</option>
                         <option value="ADMIN">Admin</option>
@@ -377,15 +381,15 @@ export function SettingsTeamPage() {
                       <span className="uppercase text-xs tracking-wide text-zinc-400">{row.role}</span>
                     )}
                   </td>
-                  <td className="py-3 pr-3">
+                  <td>
                     <Badge variant={row.status === 'Active' ? 'success' : row.status === 'Invited' ? 'warning' : 'danger'}>
                       {row.status}
                     </Badge>
                   </td>
-                  <td className="py-3 pr-3 text-zinc-500">
+                  <td className="text-zinc-500">
                     {row.expires ? new Date(row.expires).toLocaleDateString() : '—'}
                   </td>
-                  <td className="py-3 pr-3">
+                  <td>
                     {row.kind === 'invite' && row.status === 'Invited' && canInvite ? (
                       <Button
                         size="sm"
@@ -406,7 +410,7 @@ export function SettingsTeamPage() {
                       '—'
                     )}
                   </td>
-                  <td className="py-3">
+                  <td>
                     {row.kind === 'member' && canManage && row.role !== 'OWNER' && (
                       <Button
                         size="sm"
@@ -444,12 +448,28 @@ export function SettingsTeamPage() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </SettingsSection>
 
-      <Modal isOpen={showInvite} onClose={() => setShowInvite(false)} title="Invite Member" size="md">
-        <div className="space-y-4">
+      <Modal
+        isOpen={showInvite}
+        onClose={() => setShowInvite(false)}
+        title="Invite Member"
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowInvite(false)}>Cancel</Button>
+            <Button onClick={() => invite.mutate()} loading={invite.isPending} data-testid="invite-submit">
+              Send invite
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <p className="text-sm text-zinc-400 leading-relaxed">
+            They’ll receive an email with a join link. Pending invites count toward your seat limit.
+          </p>
           <Input label="Email" value={email} onChange={(e) => setEmail(e.target.value)} data-testid="invite-email" />
-          <div className="space-y-1.5">
+          <div>
             <label className="label">Role</label>
             <select
               value={role}
@@ -459,12 +479,6 @@ export function SettingsTeamPage() {
               <option value="MEMBER">Member</option>
               <option value="ADMIN">Admin</option>
             </select>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setShowInvite(false)}>Cancel</Button>
-            <Button onClick={() => invite.mutate()} loading={invite.isPending} data-testid="invite-submit">
-              Send invite
-            </Button>
           </div>
         </div>
       </Modal>

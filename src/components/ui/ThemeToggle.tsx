@@ -20,7 +20,7 @@ export function ThemeToggle({
       title={isDark ? 'Light mode' : 'Dark mode'}
       className={cn(
         'inline-flex items-center justify-center rounded-control border border-border bg-surface text-muted-foreground',
-        'hover:text-foreground hover:bg-surface-muted transition-colors duration-150',
+        'hover:text-foreground hover:border-primary-500/35 hover:bg-primary-500/10 transition-[color,border-color,background-color,box-shadow] duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         size === 'sm' ? 'h-8 w-8' : 'h-9 w-9',
         className

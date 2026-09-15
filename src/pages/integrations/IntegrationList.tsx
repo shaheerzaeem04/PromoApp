@@ -175,6 +175,77 @@ export function IntegrationListPage({ embedded = false }: { embedded?: boolean }
         </div>
       )}
       {integrations.length > 0 ? (
+        embedded ? (
+          <div>
+            {integrations.map((integration: any) => {
+              const cap = catalog.find((item: any) => item.type === integration.type);
+              const Icon = ICONS[integration.type] || Mail;
+              return (
+                <div
+                  key={integration.id}
+                  data-testid={`integration-card-${integration.type}`}
+                  className="settings-row items-start"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <Icon className="w-5 h-5 text-zinc-400 mt-0.5 shrink-0" />
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold">{integration.name}</h3>
+                        <Badge variant={healthVariant(integration.health)}>{integration.health || 'NOT_CONFIGURED'}</Badge>
+                      </div>
+                      <p className="text-sm text-zinc-400 mt-0.5">{cap?.name || integration.type}</p>
+                      <div className="mt-2 space-y-0.5 text-xs text-zinc-500">
+                        <p>Campaigns: {integration._count?.campaignIntegrations ?? 0}</p>
+                        <p>
+                          Last test:{' '}
+                          {integration.lastTestAt ? new Date(integration.lastTestAt).toLocaleString() : 'never'}{' '}
+                          {integration.lastTestOk === false ? '(failed)' : integration.lastTestOk ? '(ok)' : ''}
+                        </p>
+                        <p>Last success: {integration.lastSyncAt ? new Date(integration.lastSyncAt).toLocaleString() : 'never'}</p>
+                        {integration.lastError && <p className="text-red-400">Last error: {integration.lastError}</p>}
+                        {integration.config?.apiKeyMasked && <p>API key: {integration.config.apiKeyMasked}</p>}
+                        {integration.config?.secretConfigured && <p>Signing secret: •••• (hidden)</p>}
+                        {integration.type === 'ZAPIER' && (
+                          <p>Works with Zapier Webhooks (Catch Hook). Not an official Zapier Marketplace app.</p>
+                        )}
+                        {integration.type === 'GOOGLE_SHEETS' && (
+                          <p>Spreadsheet sync uses the workspace Google connection. Tokens are never shown in the browser.</p>
+                        )}
+                        {cap?.oauthLiveQaRequired && (
+                          <p className="text-amber-400">OAuth live account QA required — adapter is configured in code.</p>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                        <Button variant="ghost" size="sm" onClick={() => toggleMutation.mutate(integration.id)}>
+                          <Power className="w-4 h-4" />
+                          {integration.enabled ? 'Disable' : 'Enable'}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => testMutation.mutate(integration.id)} loading={testMutation.isPending}>
+                          <TestTube className="w-4 h-4" />
+                          Test
+                        </Button>
+                        {(integration.type === 'ZAPIER' || integration.type === 'CUSTOM_WEBHOOK') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            data-testid="send-test-event"
+                            onClick={() => testEventMutation.mutate(integration.id)}
+                            loading={testEventMutation.isPending}
+                          >
+                            Send test event
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(integration.id)} className="text-red-400 hover:text-red-300">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {integrations.map((integration: any, index: number) => {
             const cap = catalog.find((item: any) => item.type === integration.type);
@@ -190,9 +261,7 @@ export function IntegrationListPage({ embedded = false }: { embedded?: boolean }
                 <Card className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-zinc-300" />
-                      </div>
+                      <Icon className="w-5 h-5 text-zinc-400 shrink-0" />
                       <div>
                         <h3 className="font-semibold">{integration.name}</h3>
                         <p className="text-sm text-zinc-400">{cap?.name || integration.type}</p>
@@ -250,6 +319,7 @@ export function IntegrationListPage({ embedded = false }: { embedded?: boolean }
             );
           })}
         </div>
+        )
       ) : (
         <EmptyState
           icon={<Settings className="w-5 h-5" />}
@@ -265,15 +335,41 @@ export function IntegrationListPage({ embedded = false }: { embedded?: boolean }
         />
       )}
 
-      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Integration" size="md">
-        <div className="space-y-4">
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add Integration"
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>
+            <Button
+              data-testid="save-integration"
+              onClick={() =>
+                createMutation.mutate({
+                  ...newIntegration,
+                  config: isZapier ? { ...newIntegration.config, events: selectedEvents } : newIntegration.config,
+                })
+              }
+              loading={createMutation.isPending}
+              disabled={createMutation.isPending || (newIntegration.type === 'GOOGLE_SHEETS' && selectedCap?.serverConfigured === false)}
+            >
+              Add Integration
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <p className="text-sm text-zinc-400 leading-relaxed">
+            Connect an email, CRM, or webhook destination. Auth fields stay on the server and are never shown again after save.
+          </p>
           <Input
             label="Integration Name"
             placeholder="My Mailchimp audience"
             value={newIntegration.name}
             onChange={(e) => setNewIntegration({ ...newIntegration, name: e.target.value })}
           />
-          <div className="space-y-1.5">
+          <div>
             <label className="label">
               Provider
             </label>
@@ -284,15 +380,15 @@ export function IntegrationListPage({ embedded = false }: { embedded?: boolean }
               aria-label="Provider"
               data-testid="integration-provider"
             />
+            {selectedCap && (
+              <p className="text-sm text-zinc-500 mt-2 leading-relaxed">
+                {selectedCap.description} Auth: {selectedCap.authType.replace('_', ' ')}. Plan: {selectedCap.minPlan}+.
+                {selectedCap.requiresMarketingConsent && ' Marketing consent is required before participants are subscribed.'}
+              </p>
+            )}
           </div>
-          {selectedCap && (
-            <p className="text-sm text-zinc-400">
-              {selectedCap.description} Auth: {selectedCap.authType.replace('_', ' ')}. Plan: {selectedCap.minPlan}+.
-              {selectedCap.requiresMarketingConsent && ' Marketing consent is required before participants are subscribed.'}
-            </p>
-          )}
           {newIntegration.type === 'ZAPIER' && (
-            <p className="text-sm text-zinc-300 bg-zinc-900 border border-zinc-800 rounded-xl p-3">
+            <p className="text-sm text-zinc-400 leading-relaxed">
               Works with Zapier Webhooks. In Zapier, create a Zap with a Catch Hook trigger, paste the webhook URL here, choose events, then send a test event. This is not an official Zapier Marketplace listing.
             </p>
           )}
@@ -315,6 +411,7 @@ export function IntegrationListPage({ embedded = false }: { embedded?: boolean }
           {isZapier && (
             <CheckboxGroup
               label="Events"
+              className="gap-2.5"
               value={selectedEvents}
               onChange={(next) =>
                 setNewIntegration({
@@ -330,22 +427,6 @@ export function IntegrationListPage({ embedded = false }: { embedded?: boolean }
               ))}
             </CheckboxGroup>
           )}
-          <div className="flex justify-end gap-3 mt-6">
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>
-            <Button
-              data-testid="save-integration"
-              onClick={() =>
-                createMutation.mutate({
-                  ...newIntegration,
-                  config: isZapier ? { ...newIntegration.config, events: selectedEvents } : newIntegration.config,
-                })
-              }
-              loading={createMutation.isPending}
-              disabled={createMutation.isPending || (newIntegration.type === 'GOOGLE_SHEETS' && selectedCap?.serverConfigured === false)}
-            >
-              Add Integration
-            </Button>
-          </div>
         </div>
       </Modal>
     </div>
